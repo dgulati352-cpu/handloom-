@@ -4,7 +4,7 @@ import { db, collection, addDoc, getDocs, query, where, doc, updateDoc, incremen
 let siteSettings = {
     announcementText: "Preserving Heritage: 100% Authentic Hand-woven Collection | Free Shipping Worldwide",
     shippingCost: 199,
-    storeName: "VANYA",
+    storeName: "Hridyang Collection",
     whatsAppNumber: "918791416116"
 };
 
@@ -576,7 +576,7 @@ if (window.location.pathname.includes('checkout.html')) {
             }
 
             // Construct WhatsApp Message
-            let orderText = `*New Order from Vanya Handlooms*\n\n`;
+            let orderText = `*New Order from Hridyang Collection*\n\n`;
             orderText += `*Customer:* ${fname} ${lname}\n`;
             orderText += `*Phone:* ${phone}\n`;
             orderText += `*Email:* ${email || 'N/A'}\n\n`;
@@ -632,7 +632,7 @@ if (window.location.pathname.includes('checkout.html')) {
                         <i class="fas fa-check-circle" style="font-size: 5rem; color: #38a169; margin-bottom: 30px;"></i>
                         <h2 style="color: #2f855a; font-family: 'Cormorant Garamond', serif; font-size: 3rem; margin-bottom: 15px;">Order Placed!</h2>
                         <p style="color: var(--text-muted); font-size: 1.2rem; line-height: 1.6; max-width: 600px; margin: 0 auto;">
-                            Thank you for choosing Vanya Handlooms. Your order is being processed and you will receive updates via WhatsApp.
+                            Thank you for choosing Hridyang Collection. Your order is being processed and you will receive updates via WhatsApp.
                         </p>
                         <a href="index.html" class="btn primary" style="margin-top: 40px; display: inline-block;">Continue Shopping</a>
                     </div>

@@ -867,6 +867,33 @@ footer {
     color: rgba(255,255,255,0.5);
 }
 
+@media (max-width: 1024px) {
+    .logo {
+        font-size: 1.8rem;
+    }
+    .hero h1 {
+        font-size: 3.5rem;
+    }
+}
+
+@media (max-width: 768px) {
+    .nav-links {
+        display: none;
+    }
+    .logo {
+        font-size: 1.5rem;
+    }
+    .hero h1 {
+        font-size: 2.8rem;
+    }
+    .hero-split {
+        flex-direction: column;
+    }
+    .hero-left {
+        padding: 40px 20px;
+    }
+}
+
 @media (max-width: 900px) {
     .checkout-container {
         flex-direction: column !important;
