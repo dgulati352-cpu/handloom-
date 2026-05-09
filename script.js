@@ -1,3 +1,55 @@
+import { db, collection, addDoc, getDocs, query, where, doc, updateDoc, increment, serverTimestamp, getDoc, onSnapshot } from './firebase-config.js';
+
+// Global Settings State
+let siteSettings = {
+    announcementText: "Preserving Heritage: 100% Authentic Hand-woven Collection | Free Shipping Worldwide",
+    shippingCost: 199,
+    storeName: "VANYA",
+    whatsAppNumber: "918791416116"
+};
+
+function initSiteSettings() {
+    try {
+        const docRef = doc(db, "settings", "main");
+        
+        // Use onSnapshot for REAL-TIME updates
+        onSnapshot(docRef, (docSnap) => {
+            if (docSnap.exists()) {
+                const data = docSnap.data();
+                siteSettings = { ...siteSettings, ...data };
+                applySettings();
+                console.log("Settings updated in real-time:", data);
+            }
+        });
+    } catch (err) {
+        console.error("Error initializing site settings:", err);
+    }
+}
+
+function applySettings() {
+    // Update Announcement Bar
+    const announceBars = document.querySelectorAll('.announcement-bar');
+    announceBars.forEach(bar => {
+        if (siteSettings.announcementText) bar.innerText = siteSettings.announcementText;
+    });
+
+    // Update Store Name (Logo)
+    const logos = document.querySelectorAll('.logo');
+    logos.forEach(logo => {
+        if (siteSettings.storeName) logo.innerText = siteSettings.storeName;
+    });
+
+    // Update Title if needed
+    if (siteSettings.storeName && document.title.includes('Vanya Handlooms')) {
+        document.title = document.title.replace('Vanya Handlooms', siteSettings.storeName);
+    }
+
+    // If on checkout page, re-render to update shipping
+    if (window.location.pathname.includes('checkout.html') || window.location.href.includes('checkout.html')) {
+        if (typeof renderCheckoutSummary === 'function') renderCheckoutSummary();
+    }
+}
+
 // Reveal elements on scroll
 function reveal() {
     var reveals = document.querySelectorAll(".reveal");
@@ -54,8 +106,16 @@ if (orderForm) {
 // Quick Add Integration
 let cart = JSON.parse(localStorage.getItem('vanyaCart')) || [];
 
+// Initialize
+initSiteSettings();
+updateCartUI();
+
 document.addEventListener('DOMContentLoaded', () => {
-    updateCartUI();
+    // Initial apply for any hardcoded elements
+    applySettings();
+    
+    // Safety delay for some mobile browsers
+    setTimeout(applySettings, 500);
 });
 
 document.querySelectorAll('.quick-add button').forEach(btn => {
@@ -125,28 +185,31 @@ const viewAllBtn = document.getElementById('viewAllArticles');
 const closeBtn = document.querySelector('.close-modal');
 const allArticlesGrid = document.getElementById('allArticlesGrid');
 
-const articles = [
-    { title: "The Alchemy of Indigo", img: "assets/indigo.png", desc: "Uncovering the secrets of the world's oldest natural dye and its cultural significance." },
-    { title: "Lost Weaves of the East", img: "assets/artisan.png", desc: "A journey through the forgotten patterns of artisanal weaving across the Bengal coast." },
-    { title: "Sustainability in Every Loop", img: "assets/hero.png", desc: "Why handloom is the ultimate answer to the environmental impact of fast fashion." },
-    { title: "Threads of Resilience", img: "assets/silk.png", desc: "How handloom communities are thriving in the modern digital age." },
-    { title: "Cotton: The Breathable Gold", img: "assets/cotton.png", desc: "The history of fine Indian cottons that once captivated the world." },
-    { title: "Pattern and Poetry", img: "assets/artisan.png", desc: "Understanding the geometric language behind Ikat and Jamdani weaves." }
-];
+let articles = [];
 
-function populateArticles() {
-    allArticlesGrid.innerHTML = articles.map(art => `
-        <article class="card">
-            <div class="card-img">
-                <img src="${art.img}" alt="${art.title}">
-            </div>
-            <div class="card-body">
-                <h3>${art.title}</h3>
-                <p>${art.desc}</p>
-                <a href="#" class="read-more">Read Article →</a>
-            </div>
-        </article>
-    `).join('');
+async function populateArticles() {
+    try {
+        const querySnapshot = await getDocs(collection(db, "articles"));
+        articles = [];
+        querySnapshot.forEach(doc => articles.push({ id: doc.id, ...doc.data() }));
+        
+        if (allArticlesGrid) {
+            allArticlesGrid.innerHTML = articles.map(art => `
+                <article class="card">
+                    <div class="card-img">
+                        <img src="${art.img || 'assets/indigo.png'}" alt="${art.title}">
+                    </div>
+                    <div class="card-body">
+                        <h3>${art.title}</h3>
+                        <p>${art.desc}</p>
+                        <a href="#" class="read-more">Read Article →</a>
+                    </div>
+                </article>
+            `).join('');
+        }
+    } catch (err) {
+        console.error("Error fetching articles:", err);
+    }
 }
 
 if (viewAllBtn) {
@@ -332,17 +395,29 @@ if (checkoutBtn) {
 if (window.location.pathname.includes('checkout.html')) {
     const summaryContainer = document.getElementById('checkoutItemsContainer');
     const subtotalEl = document.getElementById('checkoutSubtotal');
+    const discountRow = document.getElementById('discountRow');
+    const discountLabel = document.getElementById('discountLabel');
+    const discountEl = document.getElementById('checkoutDiscount');
     const totalEl = document.getElementById('checkoutTotal');
-    const shippingCost = 199;
+    // shippingCost now comes dynamically from siteSettings in renderCheckoutSummary
+
+    const promoInput = document.getElementById('promoInput');
+    const promoBtn = document.getElementById('applyPromoBtn');
+    const promoFeedback = document.getElementById('promoFeedback');
 
     function renderCheckoutSummary() {
         if (!summaryContainer) return;
 
         if (cart.length === 0) {
-            summaryContainer.innerHTML = '<p style="text-align:center; color: var(--text-muted);">Your bag is empty.</p>';
+            summaryContainer.innerHTML = '<p style="text-align:center; color: var(--text-muted); padding: 40px 0;">Your bag is empty.</p>';
             subtotalEl.innerText = '₹0';
             totalEl.innerText = '₹0';
-            document.getElementById('placeOrderBtn').disabled = true;
+            const placeBtn = document.getElementById('placeOrderBtn');
+            if (placeBtn) {
+                placeBtn.disabled = true;
+                placeBtn.style.opacity = '0.5';
+                placeBtn.style.cursor = 'not-allowed';
+            }
             return;
         }
 
@@ -352,13 +427,13 @@ if (window.location.pathname.includes('checkout.html')) {
         cart.forEach(item => {
             subtotal += item.price * item.quantity;
             html += `
-                <div style="display: flex; gap: 15px; margin-bottom: 20px;">
-                    <img src="${item.img}" style="width: 60px; height: 80px; object-fit: cover; border-radius: 8px;" alt="${item.name}">
+                <div style="display: flex; gap: 15px; margin-bottom: 20px; align-items: center;">
+                    <img src="${item.img}" style="width: 65px; height: 85px; object-fit: cover; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.05);" alt="${item.name}">
                     <div style="flex-grow: 1;">
-                        <h4 style="font-size: 0.95rem; font-weight: 500; margin-bottom: 5px; text-transform: uppercase;">${item.name}</h4>
-                        <p style="font-size: 0.85rem; color: var(--text-muted);">Qty: ${item.quantity}</p>
+                        <h4 style="font-size: 0.95rem; font-weight: 500; margin-bottom: 5px; text-transform: uppercase; color: var(--text-dark);">${item.name}</h4>
+                        <p style="font-size: 0.85rem; color: var(--text-muted);">Quantity: ${item.quantity}</p>
                     </div>
-                    <div style="font-weight: 600; font-size: 0.95rem;">
+                    <div style="font-weight: 600; font-size: 1rem; color: var(--text-dark);">
                         ₹${(item.price * item.quantity).toLocaleString('en-IN')}
                     </div>
                 </div>
@@ -367,7 +442,116 @@ if (window.location.pathname.includes('checkout.html')) {
 
         summaryContainer.innerHTML = html;
         subtotalEl.innerText = '₹' + subtotal.toLocaleString('en-IN');
-        totalEl.innerText = '₹' + (subtotal + shippingCost).toLocaleString('en-IN');
+
+        // Discount Handling
+        const discountPercent = parseFloat(localStorage.getItem('vanyaDiscount')) || 0;
+        const discountAmount = (subtotal * discountPercent) / 100;
+        
+        if (discountPercent > 0) {
+            discountRow.style.display = 'flex';
+            discountLabel.innerText = `Promo Discount (${discountPercent}%)`;
+            discountEl.innerText = '-₹' + discountAmount.toLocaleString('en-IN');
+            
+            // Update Promo Input UI
+            if (promoInput && promoBtn) {
+                promoInput.value = localStorage.getItem('vanyaPromoCode') || '';
+                promoInput.disabled = true;
+                promoBtn.innerText = 'Remove';
+                promoBtn.style.background = '#e53e3e';
+                
+                promoFeedback.style.display = 'block';
+                promoFeedback.style.color = '#38a169';
+                promoFeedback.innerHTML = `<i class="fas fa-check-circle"></i> Discount applied! You saved ₹${discountAmount.toLocaleString('en-IN')}`;
+            }
+        } else {
+            discountRow.style.display = 'none';
+            if (promoInput && promoBtn) {
+                promoInput.disabled = false;
+                promoBtn.innerText = 'Apply';
+                promoBtn.style.background = 'var(--text-dark)';
+            }
+        }
+
+        const currentShippingCost = siteSettings.shippingCost || 0;
+        const grandTotal = (subtotal - discountAmount) + currentShippingCost;
+        if (totalEl) totalEl.innerText = '₹' + grandTotal.toLocaleString('en-IN');
+        
+        const shipEl = document.getElementById('checkoutShipping');
+        if (shipEl) shipEl.innerText = '₹' + currentShippingCost;
+        
+        const shipRadioEl = document.getElementById('checkoutShippingRadio');
+        if (shipRadioEl) shipRadioEl.innerText = '₹' + currentShippingCost;
+    }
+
+    // Promo Code Click Handler
+    if (promoBtn) {
+        promoBtn.addEventListener('click', async function() {
+            if (this.innerText === 'Remove') {
+                localStorage.removeItem('vanyaDiscount');
+                localStorage.removeItem('vanyaPromoId');
+                localStorage.removeItem('vanyaPromoCode');
+                promoInput.value = '';
+                promoFeedback.style.display = 'none';
+                renderCheckoutSummary();
+                return;
+            }
+
+            const code = promoInput.value.trim().toUpperCase();
+            if (!code) return;
+
+            this.innerText = 'Verifying...';
+            this.disabled = true;
+
+            try {
+                const q = query(collection(db, "promos"), where("code", "==", code), where("active", "==", true));
+                const querySnapshot = await getDocs(q);
+                
+                if (!querySnapshot.empty) {
+                    const promoDoc = querySnapshot.docs[0];
+                    const promo = promoDoc.data();
+                    
+                    let subtotal = 0;
+                    cart.forEach(item => subtotal += item.price * item.quantity);
+
+                    if (subtotal < (promo.minAmount || 0)) {
+                        showPromoError(`Min. order of ₹${promo.minAmount.toLocaleString('en-IN')} required.`);
+                        return;
+                    }
+
+                    if ((promo.usedCount || 0) >= (promo.usageLimit || 9999)) {
+                        showPromoError("This code has reached its usage limit.");
+                        return;
+                    }
+
+                    localStorage.setItem('vanyaDiscount', promo.discount);
+                    localStorage.setItem('vanyaPromoId', promoDoc.id);
+                    localStorage.setItem('vanyaPromoCode', code);
+                    renderCheckoutSummary();
+                } else {
+                    // Fallback for demo
+                    if (code === 'VANYA10') {
+                        localStorage.setItem('vanyaDiscount', 10);
+                        localStorage.setItem('vanyaPromoCode', code);
+                        renderCheckoutSummary();
+                    } else {
+                        showPromoError("Invalid or expired promo code.");
+                    }
+                }
+            } catch (err) {
+                console.error(err);
+                showPromoError("Network error. Try again.");
+            } finally {
+                this.disabled = false;
+                if (this.innerText !== 'Remove') this.innerText = 'Apply';
+            }
+        });
+    }
+
+    function showPromoError(msg) {
+        promoFeedback.style.display = 'block';
+        promoFeedback.style.color = '#e53e3e';
+        promoFeedback.innerHTML = `<i class="fas fa-exclamation-circle"></i> ${msg}`;
+        promoBtn.innerText = 'Apply';
     }
 
     renderCheckoutSummary();
@@ -387,7 +571,7 @@ if (window.location.pathname.includes('checkout.html')) {
             const pin = document.getElementById('chkPin').value.trim();
 
             if (!fname || !lname || !phone || !address || !city || !pin) {
-                alert("Please fill out all required fields (Name, Phone, Address, City, State, PIN) before placing the order.");
+                alert("Please fill out all required fields.");
                 return;
             }
 
@@ -397,55 +581,73 @@ if (window.location.pathname.includes('checkout.html')) {
             orderText += `*Phone:* ${phone}\n`;
             orderText += `*Email:* ${email || 'N/A'}\n\n`;
             orderText += `*Delivery Location:*\n${address}, ${city}, ${state} - ${pin}\nIndia\n\n`;
-            orderText += `*Payment Method:*\nRazorpay Secure Payment\n\n`;
             orderText += `*Order Items:*\n`;
 
-            let totalQty = 0;
             let subtotal = 0;
             cart.forEach(item => {
-                orderText += `- ${item.name} (Qty: ${item.quantity}) - ₹${item.price.toLocaleString('en-IN')}\n`;
-                totalQty += item.quantity;
+                orderText += `- ${item.name} (x${item.quantity}) - ₹${(item.price * item.quantity).toLocaleString('en-IN')}\n`;
                 subtotal += (item.price * item.quantity);
             });
 
-            orderText += `\n*Total Pieces Ordered:* ${totalQty}\n`;
-            orderText += `*Subtotal:* ₹${subtotal.toLocaleString('en-IN')}\n`;
-            orderText += `*Shipping:* ₹199\n`;
-            orderText += `*Grand Total:* ₹${(subtotal + 199).toLocaleString('en-IN')}\n`;
+            const discountPercent = parseFloat(localStorage.getItem('vanyaDiscount')) || 0;
+            const discountAmount = (subtotal * discountPercent) / 100;
+            const currentShippingCost = siteSettings.shippingCost || 0;
+            const grandTotal = (subtotal - discountAmount) + currentShippingCost;
+
+            orderText += `\n*Subtotal:* ₹${subtotal.toLocaleString('en-IN')}\n`;
+            if (discountPercent > 0) {
+                orderText += `*Discount:* ${discountPercent}% (-₹${discountAmount.toLocaleString('en-IN')})\n`;
+            }
+            orderText += `*Shipping:* ₹${currentShippingCost}\n`;
+            orderText += `*Grand Total:* ₹${grandTotal.toLocaleString('en-IN')}\n`;
 
             const encodedMessage = encodeURIComponent(orderText);
 
-            // --- AUTOMATIC BACKGROUND WHATSAPP SENDER (CALLMEBOT) ---
-            // 1. Add ONE of these numbers to your contacts: +34 697 10 50 14 OR +34 624 54 14 36
-            // 2. Send a WhatsApp message to it saying exactly: I allow callmebot to send me messages
-            // 3. Put the API key it gives you below:
-            const myPhoneNumber = "918791416116"; 
+            // Save to Firebase
+            const orderData = {
+                customerName: `${fname} ${lname}`,
+                email, phone, address: `${address}, ${city}, ${state} - ${pin}`,
+                items: cart,
+                total: grandTotal,
+                discount: discountAmount,
+                status: 'Pending',
+                createdAt: serverTimestamp()
+            };
+
+            addDoc(collection(db, "orders"), orderData).catch(err => console.error("Firebase Error", err));
+
+            // CallMeBot Integration (Using WhatsApp number from settings)
+            const myPhoneNumber = siteSettings.whatsAppNumber; 
             const myApiKey = "YOUR_API_KEY_HERE"; 
-            
-            const callMeBotUrl = "https://api.callmebot.com/whatsapp.php?phone=" + myPhoneNumber + "&text=" + encodedMessage + "&apikey=" + myApiKey;
-            fetch(callMeBotUrl, { mode: 'no-cors' }).then(res => console.log("Sent")).catch(err => console.log(err));
-            const originalText = this.innerText;
-            this.innerText = 'Processing Secure Payment...';
+            const callMeBotUrl = `https://api.callmebot.com/whatsapp.php?phone=${myPhoneNumber}&text=${encodedMessage}&apikey=${myApiKey}`;
+            fetch(callMeBotUrl, { mode: 'no-cors' }).catch(err => console.log(err));
+
+            this.innerText = 'Processing Order...';
+            this.disabled = true;
             this.style.background = '#800000';
-            this.style.opacity = '0.8';
-            this.style.pointerEvents = 'none';
 
             setTimeout(() => {
                 document.querySelector('.checkout-container').innerHTML = `
-                    <div style="text-align: center; padding: 100px 20px; width: 100%;">
+                    <div style="text-align: center; padding: 100px 20px; width: 100%; animation: fadeIn 0.8s ease;">
                         <i class="fas fa-check-circle" style="font-size: 5rem; color: #38a169; margin-bottom: 30px;"></i>
-                        <h2 style="color: #2f855a; font-family: 'Cormorant Garamond', serif; font-size: 3rem; margin-bottom: 15px;">Order Placed Successfully!</h2>
+                        <h2 style="color: #2f855a; font-family: 'Cormorant Garamond', serif; font-size: 3rem; margin-bottom: 15px;">Order Placed!</h2>
                         <p style="color: var(--text-muted); font-size: 1.2rem; line-height: 1.6; max-width: 600px; margin: 0 auto;">
-                            Thank you for your purchase. Your premium heritage pieces will be shipped shortly. 
-                            An order confirmation has been sent to your WhatsApp.
+                            Thank you for choosing Vanya Handlooms. Your order is being processed and you will receive updates via WhatsApp.
                         </p>
-                        <a href="index.html" class="btn primary" style="margin-top: 40px; display: inline-block;">Return to Store</a>
+                        <a href="index.html" class="btn primary" style="margin-top: 40px; display: inline-block;">Continue Shopping</a>
                     </div>
                 `;
 
-                // Empty cart
+                const usedPromoId = localStorage.getItem('vanyaPromoId');
+                if (usedPromoId) {
+                    updateDoc(doc(db, "promos", usedPromoId), { usedCount: increment(1) });
+                }
+
                 cart = [];
                 localStorage.setItem('vanyaCart', JSON.stringify(cart));
+                localStorage.removeItem('vanyaDiscount');
+                localStorage.removeItem('vanyaPromoId');
+                localStorage.removeItem('vanyaPromoCode');
                 updateCartUI();
             }, 2500);
         });
