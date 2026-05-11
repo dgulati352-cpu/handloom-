@@ -14,6 +14,7 @@
 
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <link rel="stylesheet" href="style.css">
+    <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
 </head>
 
 <body style="background-color: #fdfbf7;">
@@ -112,7 +113,7 @@
                                 days</div>
                         </div>
                     </div>
-                    <div style="font-weight: 600;" id="checkoutShippingRadio">₹199</div>
+                    <div style="font-weight: 600; color: #38a169;" id="checkoutShippingRadio">Free</div>
                 </div>
             </div>
 
@@ -122,15 +123,17 @@
                     <div class="step-number">4</div>
                     <h3>Payment Method</h3>
                 </div>
-                <div
-                    style="border: 1px solid #ddd; border-radius: 8px; padding: 25px; display: flex; align-items: center; gap: 20px;">
-                    <i class="far fa-credit-card" style="font-size: 2rem; color: var(--text-muted);"></i>
-                    <div>
-                        <div style="font-weight: 600; font-size: 1.1rem; margin-bottom: 5px;">Razorpay Secure Payment
-                        </div>
-                        <div style="font-size: 0.9rem; color: var(--text-muted);">Pay using UPI, Cards, Netbanking &
-                            Wallets</div>
+                <div class="payment-option selected"
+                    style="border: 2px solid var(--primary); border-radius: 12px; padding: 25px; display: flex; align-items: center; gap: 20px; background: #fffcfc; position: relative; transition: all 0.3s ease;">
+                    <div style="width: 24px; height: 24px; border-radius: 50%; background: var(--primary); color: white; display: flex; align-items: center; justify-content: center; position: absolute; top: -10px; right: -10px; box-shadow: 0 2px 8px rgba(0,0,0,0.2);">
+                        <i class="fas fa-check" style="font-size: 0.8rem;"></i>
                     </div>
+                    <i class="far fa-credit-card" style="font-size: 2.2rem; color: var(--primary);"></i>
+                    <div>
+                        <div style="font-weight: 700; font-size: 1.1rem; margin-bottom: 4px; color: var(--text-dark);">Razorpay Secure Payment</div>
+                        <div style="font-size: 0.9rem; color: var(--text-muted);">Cards, UPI, Netbanking & Wallets</div>
+                    </div>
+                    <img src="https://razorpay.com/assets/razorpay-glyph.svg" style="height: 25px; margin-left: auto; opacity: 0.8;" alt="Razorpay">
                 </div>
             </div>
 
@@ -168,7 +171,7 @@
                 <div
                     style="display: flex; justify-content: space-between; margin-bottom: 20px; font-size: 0.95rem; color: var(--text-muted);">
                     <span>Shipping</span>
-                    <span id="checkoutShipping">₹199</span>
+                    <span id="checkoutShipping" style="color: #38a169; font-weight: 500;">Free</span>
                 </div>
 
                 <div

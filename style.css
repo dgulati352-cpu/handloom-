@@ -1,11 +1,11 @@
 :root {
-    --primary: #800000; /* Deep Crimson */
-    --secondary: #C5A059; /* Muted Gold */
-    --bg-light: #FDFBF7; /* Soft Linen */
-    --text-dark: #1A1A1A;
-    --text-muted: #555555;
-    --glass: rgba(255, 255, 255, 0.9);
-    --shadow: 0 20px 40px rgba(0, 0, 0, 0.08);
+    --primary: #1E3A8A; /* Royal Blue */
+    --secondary: #60A5FA; /* Light Blue */
+    --bg-light: #F8FAFC; /* Slate Light */
+    --text-dark: #0F172A;
+    --text-muted: #475569;
+    --glass: rgba(255, 255, 255, 0.95);
+    --shadow: 0 10px 25px rgba(30, 58, 138, 0.1);
     --transition: all 0.5s cubic-bezier(0.19, 1, 0.22, 1);
 }
 
@@ -32,12 +32,29 @@ h1, h2, h3, .logo {
 /* --- Announcement Bar --- */
 .announcement-bar {
     background: var(--primary);
-    color: white;
-    text-align: center;
-    padding: 10px;
+    color: rgb(253, 247, 247);
+    padding: 12px 0;
     font-size: 0.85rem;
     letter-spacing: 1px;
     font-weight: 500;
+    overflow: hidden;
+    position: relative;
+    white-space: nowrap;
+}
+
+.announcement-track {
+    display: flex;
+    width: max-content;
+    animation: scroll 300s linear infinite;
+}
+
+.announcement-track span {
+    padding-right: 100px;
+}
+
+@keyframes scroll {
+    0% { transform: translateX(0); }
+    100% { transform: translateX(-50%); }
 }
 
 /* --- Navigation --- */

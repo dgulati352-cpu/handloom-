@@ -1,12 +1,47 @@
 import { db, collection, addDoc, getDocs, query, where, doc, updateDoc, increment, serverTimestamp, getDoc, onSnapshot } from './firebase-config.js';
+import { API_BASE_URL, RAZORPAY_KEY, DEFAULT_SETTINGS } from './constants.js';
 
 // Global Settings State
-let siteSettings = {
-    announcementText: "Preserving Heritage: 100% Authentic Hand-woven Collection | Free Shipping Worldwide",
-    shippingCost: 199,
-    storeName: "Hridyang Collection",
-    whatsAppNumber: "918791416116"
-};
+let siteSettings = { ...DEFAULT_SETTINGS };
+
+async function checkBackendStatus() {
+    const warningId = 'backend-offline-warning';
+    const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+    const checkUrl = isLocal ? `http://${window.location.hostname}:5001` : 'https://handloom-backend-one.vercel.app';
+
+    try {
+        const res = await fetch(`${checkUrl}/api/status`);
+        if (res.ok) {
+            console.log("Backend Status: Online");
+            const existing = document.getElementById(warningId);
+            if (existing) existing.remove();
+        } else {
+            throw new Error("Offline");
+        }
+    } catch (err) {
+        console.warn("Backend is unreachable.");
+        if (window.location.pathname.includes('checkout.html') && !document.getElementById(warningId)) {
+            const warning = document.createElement('div');
+            warning.id = warningId;
+            warning.style.cssText = "background: #fff5f5; color: #c53030; padding: 20px; border: 1px solid #feb2b2; border-radius: 12px; margin-bottom: 25px; text-align: center; font-weight: 600; box-shadow: 0 4px 12px rgba(0,0,0,0.05); animation: fadeIn 0.3s ease;";
+            warning.innerHTML = `
+                <div style="display: flex; align-items: center; justify-content: center; gap: 10px; margin-bottom: 5px;">
+                    <i class="fas fa-exclamation-triangle"></i> 
+                    <span>Payment server is offline</span>
+                </div>
+                <div style="font-size: 0.85rem; font-weight: 400; opacity: 0.8; margin-bottom: 10px;">
+                    Please start the backend with "npm start" in the backend folder.
+                </div>
+                <button onclick="checkBackendStatus()" style="background: #c53030; color: white; border: none; padding: 5px 15px; border-radius: 20px; font-size: 0.8rem; cursor: pointer; font-weight: 600;">
+                    <i class="fas fa-sync-alt"></i> Retry Connection
+                </button>
+            `;
+            const container = document.querySelector('.checkout-container');
+            if (container) container.prepend(warning);
+        }
+    }
+}
+window.checkBackendStatus = checkBackendStatus; // Make globally accessible for the button
 
 function initSiteSettings() {
     try {
@@ -30,7 +65,26 @@ function applySettings() {
     // Update Announcement Bar
     const announceBars = document.querySelectorAll('.announcement-bar');
     announceBars.forEach(bar => {
-        if (siteSettings.announcementText) bar.innerText = siteSettings.announcementText;
+        if (!siteSettings.announcementText) return;
+
+        let track = bar.querySelector('.announcement-track');
+        
+        // If track doesn't exist (overwritten or missing), rebuild it
+        if (!track) {
+            bar.innerHTML = '<div class="announcement-track"></div>';
+            track = bar.querySelector('.announcement-track');
+        }
+
+        // Ensure exactly 4 spans for smooth looping
+        const currentSpans = track.querySelectorAll('span');
+        if (currentSpans.length !== 4) {
+            track.innerHTML = '<span></span><span></span><span></span><span></span>';
+        }
+
+        const spans = track.querySelectorAll('span');
+        spans.forEach(span => {
+            span.innerText = siteSettings.announcementText;
+        });
     });
 
     // Update Store Name (Logo)
@@ -108,6 +162,7 @@ let cart = JSON.parse(localStorage.getItem('vanyaCart')) || [];
 
 // Initialize
 initSiteSettings();
+checkBackendStatus();
 updateCartUI();
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -118,9 +173,10 @@ document.addEventListener('DOMContentLoaded', () => {
     setTimeout(applySettings, 500);
 });
 
-document.querySelectorAll('.quick-add button').forEach(btn => {
-    btn.addEventListener('click', function () {
-        const productCard = this.closest('.product-card');
+document.addEventListener('click', function (e) {
+    const quickAddBtn = e.target.closest('.quick-add button');
+    if (quickAddBtn) {
+        const productCard = quickAddBtn.closest('.product-card');
         const productName = productCard.querySelector('h3').innerText;
         const priceStr = productCard.querySelector('.price').innerText;
         const qtyInput = productCard.querySelector('.qty-input');
@@ -141,9 +197,9 @@ document.querySelectorAll('.quick-add button').forEach(btn => {
         updateCartUI();
 
         // Visual feedback
-        const originalText = this.innerHTML;
-        this.innerHTML = '<i class="fas fa-check"></i> Added';
-        this.style.background = '#800000';
+        const originalText = quickAddBtn.innerHTML;
+        quickAddBtn.innerHTML = '<i class="fas fa-check"></i> Added';
+        quickAddBtn.style.background = '#800000';
 
         // Open sidebar to show it was added
         document.getElementById('cartSidebar').classList.add('active');
@@ -151,10 +207,10 @@ document.querySelectorAll('.quick-add button').forEach(btn => {
         document.body.style.overflow = 'hidden';
 
         setTimeout(() => {
-            this.innerHTML = '<i class="fas fa-shopping-cart"></i> Quick Add';
-            this.style.background = '#1A1A1A';
+            quickAddBtn.innerHTML = '<i class="fas fa-shopping-cart"></i> Quick Add';
+            quickAddBtn.style.background = '#1A1A1A';
         }, 2000);
-    });
+    }
 });
 
 // Smooth scrolling for navigation links
@@ -179,61 +235,6 @@ window.addEventListener('scroll', function () {
     }
 });
 
-// Modal Logic
-const modal = document.getElementById('articlesModal');
-const viewAllBtn = document.getElementById('viewAllArticles');
-const closeBtn = document.querySelector('.close-modal');
-const allArticlesGrid = document.getElementById('allArticlesGrid');
-
-let articles = [];
-
-async function populateArticles() {
-    try {
-        const querySnapshot = await getDocs(collection(db, "articles"));
-        articles = [];
-        querySnapshot.forEach(doc => articles.push({ id: doc.id, ...doc.data() }));
-        
-        if (allArticlesGrid) {
-            allArticlesGrid.innerHTML = articles.map(art => `
-                <article class="card">
-                    <div class="card-img">
-                        <img src="${art.img || 'assets/indigo.png'}" alt="${art.title}">
-                    </div>
-                    <div class="card-body">
-                        <h3>${art.title}</h3>
-                        <p>${art.desc}</p>
-                        <a href="#" class="read-more">Read Article →</a>
-                    </div>
-                </article>
-            `).join('');
-        }
-    } catch (err) {
-        console.error("Error fetching articles:", err);
-    }
-}
-
-if (viewAllBtn) {
-    viewAllBtn.onclick = function () {
-        populateArticles();
-        modal.classList.add('active');
-        document.body.style.overflow = 'hidden'; // Disable scroll
-    }
-}
-
-if (closeBtn) {
-    closeBtn.onclick = function () {
-        modal.classList.remove('active');
-        document.body.style.overflow = 'auto'; // Enable scroll
-    }
-}
-
-window.onclick = function (event) {
-    if (event.target == modal) {
-        modal.classList.remove('active');
-        document.body.style.overflow = 'auto';
-    }
-}
-
 // Quantity Selector Logic
 document.addEventListener('click', function (e) {
     if (e.target.classList.contains('qty-btn')) {
@@ -255,9 +256,13 @@ document.addEventListener('click', function (e) {
             const productCard = e.target.closest('.product-card');
             if (productCard) {
                 const productName = productCard.querySelector('h3').innerText;
-                const priceStr = productCard.querySelector('.price').innerText;
+                const priceElement = productCard.querySelector('.price');
+                let priceStr = priceElement.innerText.split('\n')[0];
                 const imgSrc = productCard.querySelector('img').src;
-                const price = parseInt(priceStr.replace(/[^0-9]/g, ''));
+                
+                let match = priceStr.match(/[\d,]+/);
+                const price = match ? parseInt(match[0].replace(/,/g, '')) : 0;
+                
                 const finalQuantity = parseInt(input.value);
 
                 const existingItemIndex = cart.findIndex(item => item.name === productName);
@@ -456,7 +461,7 @@ if (window.location.pathname.includes('checkout.html')) {
             if (promoInput && promoBtn) {
                 promoInput.value = localStorage.getItem('vanyaPromoCode') || '';
                 promoInput.disabled = true;
-                promoBtn.innerText = 'Remove';
+                promoBtn.textContent = 'Remove';
                 promoBtn.style.background = '#e53e3e';
                 
                 promoFeedback.style.display = 'block';
@@ -467,7 +472,7 @@ if (window.location.pathname.includes('checkout.html')) {
             discountRow.style.display = 'none';
             if (promoInput && promoBtn) {
                 promoInput.disabled = false;
-                promoBtn.innerText = 'Apply';
+                promoBtn.textContent = 'Apply';
                 promoBtn.style.background = 'var(--text-dark)';
             }
         }
@@ -477,16 +482,16 @@ if (window.location.pathname.includes('checkout.html')) {
         if (totalEl) totalEl.innerText = '₹' + grandTotal.toLocaleString('en-IN');
         
         const shipEl = document.getElementById('checkoutShipping');
-        if (shipEl) shipEl.innerText = '₹' + currentShippingCost;
+        if (shipEl) shipEl.innerText = currentShippingCost > 0 ? '₹' + currentShippingCost : 'Free';
         
         const shipRadioEl = document.getElementById('checkoutShippingRadio');
-        if (shipRadioEl) shipRadioEl.innerText = '₹' + currentShippingCost;
+        if (shipRadioEl) shipRadioEl.innerText = currentShippingCost > 0 ? '₹' + currentShippingCost : 'Free';
     }
 
     // Promo Code Click Handler
     if (promoBtn) {
         promoBtn.addEventListener('click', async function() {
-            if (this.innerText === 'Remove') {
+            if (this.textContent.trim().toUpperCase() === 'REMOVE') {
                 localStorage.removeItem('vanyaDiscount');
                 localStorage.removeItem('vanyaPromoId');
                 localStorage.removeItem('vanyaPromoCode');
@@ -542,7 +547,7 @@ if (window.location.pathname.includes('checkout.html')) {
                 showPromoError("Network error. Try again.");
             } finally {
                 this.disabled = false;
-                if (this.innerText !== 'Remove') this.innerText = 'Apply';
+                if (this.textContent.trim().toUpperCase() !== 'REMOVE') this.textContent = 'Apply';
             }
         });
     }
@@ -551,15 +556,46 @@ if (window.location.pathname.includes('checkout.html')) {
         promoFeedback.style.display = 'block';
         promoFeedback.style.color = '#e53e3e';
         promoFeedback.innerHTML = `<i class="fas fa-exclamation-circle"></i> ${msg}`;
-        promoBtn.innerText = 'Apply';
+        promoBtn.textContent = 'Apply';
     }
 
     renderCheckoutSummary();
 
     const placeOrderBtn = document.getElementById('placeOrderBtn');
     if (placeOrderBtn) {
-        placeOrderBtn.addEventListener('click', function () {
-            if (cart.length === 0) return;
+        placeOrderBtn.addEventListener('click', async function () {
+            if (cart.length === 0) {
+                alert("Your bag is empty.");
+                return;
+            }
+
+            // Form Validation with highlighting
+            const fields = [
+                { id: 'chkFirstName', label: 'First Name' },
+                { id: 'chkLastName', label: 'Last Name' },
+                { id: 'chkEmail', label: 'Email' },
+                { id: 'chkPhone', label: 'Phone' },
+                { id: 'chkAddress', label: 'Address' },
+                { id: 'chkCity', label: 'City' },
+                { id: 'chkState', label: 'State' },
+                { id: 'chkPin', label: 'PIN Code' }
+            ];
+
+            let missing = [];
+            fields.forEach(f => {
+                const el = document.getElementById(f.id);
+                if (!el.value.trim()) {
+                    missing.push(f.label);
+                    el.style.borderColor = '#e53e3e';
+                } else {
+                    el.style.borderColor = '#ddd';
+                }
+            });
+
+            if (missing.length > 0) {
+                alert("Please fill in the following fields: " + missing.join(", "));
+                return;
+            }
 
             const fname = document.getElementById('chkFirstName').value.trim();
             const lname = document.getElementById('chkLastName').value.trim();
@@ -570,86 +606,233 @@ if (window.location.pathname.includes('checkout.html')) {
             const state = document.getElementById('chkState').value.trim();
             const pin = document.getElementById('chkPin').value.trim();
 
-            if (!fname || !lname || !phone || !address || !city || !pin) {
-                alert("Please fill out all required fields.");
-                return;
-            }
-
-            // Construct WhatsApp Message
-            let orderText = `*New Order from Hridyang Collection*\n\n`;
-            orderText += `*Customer:* ${fname} ${lname}\n`;
-            orderText += `*Phone:* ${phone}\n`;
-            orderText += `*Email:* ${email || 'N/A'}\n\n`;
-            orderText += `*Delivery Location:*\n${address}, ${city}, ${state} - ${pin}\nIndia\n\n`;
-            orderText += `*Order Items:*\n`;
-
-            let subtotal = 0;
-            cart.forEach(item => {
-                orderText += `- ${item.name} (x${item.quantity}) - ₹${(item.price * item.quantity).toLocaleString('en-IN')}\n`;
-                subtotal += (item.price * item.quantity);
-            });
-
+            // Calculate Totals
+            let subtotal = cart.reduce((acc, item) => acc + (item.price * item.quantity), 0);
             const discountPercent = parseFloat(localStorage.getItem('vanyaDiscount')) || 0;
             const discountAmount = (subtotal * discountPercent) / 100;
             const currentShippingCost = siteSettings.shippingCost || 0;
             const grandTotal = (subtotal - discountAmount) + currentShippingCost;
 
-            orderText += `\n*Subtotal:* ₹${subtotal.toLocaleString('en-IN')}\n`;
-            if (discountPercent > 0) {
-                orderText += `*Discount:* ${discountPercent}% (-₹${discountAmount.toLocaleString('en-IN')})\n`;
-            }
-            orderText += `*Shipping:* ₹${currentShippingCost}\n`;
-            orderText += `*Grand Total:* ₹${grandTotal.toLocaleString('en-IN')}\n`;
-
-            const encodedMessage = encodeURIComponent(orderText);
-
-            // Save to Firebase
-            const orderData = {
-                customerName: `${fname} ${lname}`,
-                email, phone, address: `${address}, ${city}, ${state} - ${pin}`,
-                items: cart,
-                total: grandTotal,
-                discount: discountAmount,
-                status: 'Pending',
-                createdAt: serverTimestamp()
-            };
-
-            addDoc(collection(db, "orders"), orderData).catch(err => console.error("Firebase Error", err));
-
-            // CallMeBot Integration (Using WhatsApp number from settings)
-            const myPhoneNumber = siteSettings.whatsAppNumber; 
-            const myApiKey = "YOUR_API_KEY_HERE"; 
-            const callMeBotUrl = `https://api.callmebot.com/whatsapp.php?phone=${myPhoneNumber}&text=${encodedMessage}&apikey=${myApiKey}`;
-            fetch(callMeBotUrl, { mode: 'no-cors' }).catch(err => console.log(err));
-
             this.innerText = 'Processing Order...';
             this.disabled = true;
-            this.style.background = '#800000';
 
-            setTimeout(() => {
-                document.querySelector('.checkout-container').innerHTML = `
-                    <div style="text-align: center; padding: 100px 20px; width: 100%; animation: fadeIn 0.8s ease;">
-                        <i class="fas fa-check-circle" style="font-size: 5rem; color: #38a169; margin-bottom: 30px;"></i>
-                        <h2 style="color: #2f855a; font-family: 'Cormorant Garamond', serif; font-size: 3rem; margin-bottom: 15px;">Order Placed!</h2>
-                        <p style="color: var(--text-muted); font-size: 1.2rem; line-height: 1.6; max-width: 600px; margin: 0 auto;">
-                            Thank you for choosing Hridyang Collection. Your order is being processed and you will receive updates via WhatsApp.
-                        </p>
-                        <a href="index.html" class="btn primary" style="margin-top: 40px; display: inline-block;">Continue Shopping</a>
-                    </div>
-                `;
+            if (grandTotal < 1) {
+                // Free order bypass (Razorpay requires min 1 INR)
+                try {
+                    const orderData = {
+                        firstName: fname,
+                        lastName: lname,
+                        customerName: `${fname} ${lname}`,
+                        email: email,
+                        phone: phone,
+                        addressLine: address,
+                        city: city,
+                        state: state,
+                        pin: pin,
+                        address: `${address}, ${city}, ${state} - ${pin}`,
+                        items: cart,
+                        total: grandTotal,
+                        discount: discountAmount,
+                        paymentId: 'FREE_PROMO_ORDER',
+                        orderId: 'FREE_PROMO_ORDER',
+                        paymentStatus: 'Paid',
+                        status: 'Processing',
+                        createdAt: serverTimestamp()
+                    };
 
-                const usedPromoId = localStorage.getItem('vanyaPromoId');
-                if (usedPromoId) {
-                    updateDoc(doc(db, "promos", usedPromoId), { usedCount: increment(1) });
+                    const docRef = await addDoc(collection(db, "orders"), orderData);
+
+                    // Show Success UI
+                    document.querySelector('.checkout-container').innerHTML = `
+                        <div style="text-align: center; padding: 100px 20px; width: 100%;">
+                            <i class="fas fa-check-circle" style="font-size: 5rem; color: #38a169; margin-bottom: 30px;"></i>
+                            <h2 style="color: #2f855a; font-family: 'Cormorant Garamond', serif; font-size: 3rem; margin-bottom: 15px;">Order Placed!</h2>
+                            <p style="color: var(--text-muted); font-size: 1.2rem; line-height: 1.6; max-width: 600px; margin: 0 auto;">
+                                Thank you for choosing Hridyang Collection. Your order #${docRef.id} has been confirmed.
+                            </p>
+                            <a href="index.html" class="btn primary" style="margin-top: 40px; display: inline-block;">Continue Shopping</a>
+                        </div>
+                    `;
+
+                    // Cleanup
+                    const usedPromoId = localStorage.getItem('vanyaPromoId');
+                    if (usedPromoId) await updateDoc(doc(db, "promos", usedPromoId), { usedCount: increment(1) });
+                    
+                    cart = [];
+                    localStorage.setItem('vanyaCart', JSON.stringify(cart));
+                    localStorage.removeItem('vanyaDiscount');
+                    localStorage.removeItem('vanyaPromoId');
+                    localStorage.removeItem('vanyaPromoCode');
+                    updateCartUI();
+                } catch (e) {
+                    console.error(e);
+                    alert("Error saving free order: " + e.message);
+                    this.innerText = 'Place Order';
+                    this.disabled = false;
                 }
+                return;
+            }
 
-                cart = [];
-                localStorage.setItem('vanyaCart', JSON.stringify(cart));
-                localStorage.removeItem('vanyaDiscount');
-                localStorage.removeItem('vanyaPromoId');
-                localStorage.removeItem('vanyaPromoCode');
-                updateCartUI();
-            }, 2500);
+            try {
+                // 1. Create Razorpay Order on Backend
+                console.log("Creating Razorpay order at:", `${API_BASE_URL}/api/create-order`);
+                const response = await fetch(`${API_BASE_URL}/api/create-order`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        amount: grandTotal,
+                        currency: 'INR',
+                        receipt: `receipt_order_${Date.now()}`
+                    })
+                });
+
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.error || "Failed to create Razorpay order");
+                }
+                const rzpOrder = await response.json();
+
+                // 2. Configure Razorpay Modal
+                const options = {
+                    key: RAZORPAY_KEY,
+                    amount: rzpOrder.amount,
+                    currency: rzpOrder.currency,
+                    name: siteSettings.storeName || "Hridyang Collection",
+                    description: "Handloom Heritage Purchase",
+                    image: "assets/logo.png",
+                    order_id: rzpOrder.order_id,
+                    modal: {
+                        ondismiss: function() {
+                            console.log("Payment modal dismissed by user");
+                            placeOrderBtn.innerText = 'Place Order';
+                            placeOrderBtn.disabled = false;
+                        }
+                    },
+                    handler: async function (response) {
+                        // 3. Verify Payment on Backend
+                        placeOrderBtn.innerText = 'Verifying Payment...';
+                        
+                        try {
+                            console.log("Verifying payment at:", `${API_BASE_URL}/api/verify-payment`);
+                            const verifyRes = await fetch(`${API_BASE_URL}/api/verify-payment`, {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({
+                                    razorpay_order_id: response.razorpay_order_id,
+                                    razorpay_payment_id: response.razorpay_payment_id,
+                                    razorpay_signature: response.razorpay_signature
+                                })
+                            });
+
+                            const verifyData = await verifyRes.json();
+
+                            if (verifyData.verified) {
+                                // 4. Save Final Order to Firebase
+                                placeOrderBtn.innerText = 'Saving Order...';
+                                
+                                const orderData = {
+                                    firstName: fname,
+                                    lastName: lname,
+                                    customerName: `${fname} ${lname}`,
+                                    email: email,
+                                    phone: phone,
+                                    addressLine: address,
+                                    city: city,
+                                    state: state,
+                                    pin: pin,
+                                    address: `${address}, ${city}, ${state} - ${pin}`,
+                                    items: cart,
+                                    total: grandTotal,
+                                    discount: discountAmount,
+                                    paymentId: response.razorpay_payment_id,
+                                    orderId: response.razorpay_order_id,
+                                    paymentStatus: 'Paid',
+                                    status: 'Processing',
+                                    createdAt: serverTimestamp()
+                                };
+
+                                const docRef = await addDoc(collection(db, "orders"), orderData);
+                                
+                                // WhatsApp Notification
+                                let orderText = `*Order Confirmed - Hridyang Collection*\n\n`;
+                                orderText += `*Order ID:* ${docRef.id}\n`;
+                                orderText += `*Customer:* ${fname} ${lname}\n`;
+                                orderText += `*Payment ID:* ${response.razorpay_payment_id}\n\n`;
+                                orderText += `*Items:*\n`;
+                                cart.forEach(item => orderText += `- ${item.name} (x${item.quantity})\n`);
+                                orderText += `\n*Total:* ₹${grandTotal.toLocaleString('en-IN')}`;
+
+                                const encodedMessage = encodeURIComponent(orderText);
+                                const myPhoneNumber = siteSettings.whatsAppNumber; 
+                                const myApiKey = siteSettings.callMeBotKey || "YOUR_API_KEY"; 
+                                fetch(`https://api.callmebot.com/whatsapp.php?phone=${myPhoneNumber}&text=${encodedMessage}&apikey=${myApiKey}`, { mode: 'no-cors' });
+
+                                // Show Success UI
+                                document.querySelector('.checkout-container').innerHTML = `
+                                    <div style="text-align: center; padding: 100px 20px; width: 100%;">
+                                        <i class="fas fa-check-circle" style="font-size: 5rem; color: #38a169; margin-bottom: 30px;"></i>
+                                        <h2 style="color: #2f855a; font-family: 'Cormorant Garamond', serif; font-size: 3rem; margin-bottom: 15px;">Order Placed!</h2>
+                                        <p style="color: var(--text-muted); font-size: 1.2rem; line-height: 1.6; max-width: 600px; margin: 0 auto;">
+                                            Thank you for choosing Hridyang Collection. Your order #${docRef.id} has been confirmed.
+                                        </p>
+                                        <a href="index.html" class="btn primary" style="margin-top: 40px; display: inline-block;">Continue Shopping</a>
+                                    </div>
+                                `;
+
+                                // Cleanup
+                                const usedPromoId = localStorage.getItem('vanyaPromoId');
+                                if (usedPromoId) updateDoc(doc(db, "promos", usedPromoId), { usedCount: increment(1) });
+                                
+                                cart = [];
+                                localStorage.setItem('vanyaCart', JSON.stringify(cart));
+                                localStorage.removeItem('vanyaDiscount');
+                                localStorage.removeItem('vanyaPromoId');
+                                localStorage.removeItem('vanyaPromoCode');
+                                updateCartUI();
+                            } else {
+                                alert("Payment verification failed: " + (verifyData.message || "Invalid signature"));
+                                placeOrderBtn.innerText = 'Place Order';
+                                placeOrderBtn.disabled = false;
+                            }
+                        } catch (vErr) {
+                            console.error("Verification Error:", vErr);
+                            alert("Verification error. Please check your internet connection.");
+                            placeOrderBtn.innerText = 'Place Order';
+                            placeOrderBtn.disabled = false;
+                        }
+                    },
+                    prefill: {
+                        name: `${fname} ${lname}`,
+                        email: email,
+                        contact: phone
+                    },
+                    theme: {
+                        color: "#800000"
+                    },
+                    modal: {
+                        ondismiss: function() {
+                            console.log("Payment modal dismissed by user");
+                            placeOrderBtn.innerText = 'Place Order';
+                            placeOrderBtn.disabled = false;
+                        }
+                    }
+                };
+
+                const rzp1 = new Razorpay(options);
+                
+                rzp1.on('payment.failed', function (response) {
+                    alert("Payment Failed: " + response.error.description);
+                    console.error("Payment Failed", response.error);
+                });
+
+                rzp1.open();
+
+            } catch (err) {
+                console.error("Checkout Error:", err);
+                alert("Error: " + err.message);
+                this.innerText = 'Place Order';
+                this.disabled = false;
+            }
         });
     }
 }

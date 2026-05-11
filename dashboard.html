@@ -10,8 +10,8 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
         :root {
-            --primary: #800000;
-            --primary-light: #fdfbf7;
+            --primary: #1E3A8A;
+            --primary-light: #f0f9ff;
             --text-dark: #1A1A1A;
             --text-muted: #666;
             --success: #38a169;
@@ -31,6 +31,7 @@
             background: #f4f7f6;
             color: var(--text-dark);
             display: flex;
+            min-height: 100vh;
         }
 
         /* Sidebar */
@@ -196,7 +197,7 @@
         }
 
         .btn-primary { background: var(--primary); color: white; }
-        .btn-primary:hover { background: #600000; }
+        .btn-primary:hover { background: #1e3a8a; filter: brightness(1.2); }
 
         /* Modals */
         .modal-overlay {
@@ -262,90 +263,36 @@
             margin-top: 30px;
         }
 
-        /* Drag & Drop */
-        .drop-zone {
-            width: 100%;
-            height: 120px;
-            padding: 25px;
+        #apiStatus {
+            font-size: 0.85rem;
             display: flex;
             align-items: center;
-            justify-content: center;
-            text-align: center;
-            font-family: "Outfit", sans-serif;
-            font-weight: 500;
-            font-size: 0.9rem;
-            cursor: pointer;
-            color: #ccc;
-            border: 2px dashed #eee;
-            border-radius: 10px;
-            transition: 0.3s;
-            margin-top: 10px;
+            gap: 8px;
+            color: var(--success);
         }
-
-        .drop-zone:hover, .drop-zone.over {
-            border-color: var(--primary);
-            color: var(--primary);
-            background: rgba(128, 0, 0, 0.05);
-        }
-
-        .drop-zone__thumb {
-            width: 100%;
-            height: 100%;
-            border-radius: 10px;
-            overflow: hidden;
-            background-color: #cccccc;
-            background-size: cover;
-            position: relative;
-        }
-
-        .drop-zone__input {
-            display: none;
-        }
-
-        #cameraContainer {
-            display: none;
-            flex-direction: column;
-            align-items: center;
-            gap: 15px;
-            margin-top: 15px;
-        }
-
-        #cameraVideo {
-            width: 100%;
-            border-radius: 10px;
-            background: #000;
-        }
-
     </style>
 </head>
 <body>
-
     <aside>
-        <a href="index.html" class="logo">Hridyang Collection</a>
+        <a href="index.html" class="logo">HRIDYANG</a>
         <ul class="nav-menu">
             <li class="nav-item active" onclick="switchSection('orders')">
                 <i class="fas fa-shopping-bag"></i> Orders
             </li>
-            <li class="nav-item" onclick="switchSection('articles')">
-                <i class="fas fa-feather-alt"></i> Articles
-            </li>
             <li class="nav-item" onclick="switchSection('promos')">
-                <i class="fas fa-percentage"></i> Promo Codes
+                <i class="fas fa-tag"></i> Promo Codes
             </li>
             <li class="nav-item" onclick="switchSection('settings')">
-                <i class="fas fa-cog"></i> Settings
-            </li>
-            <li class="nav-item" onclick="window.location.href='index.html'">
-                <i class="fas fa-external-link-alt"></i> View Store
+                <i class="fas fa-cog"></i> Site Settings
             </li>
         </ul>
     </aside>
 
     <main>
         <header>
-            <h1>Dashboard</h1>
-            <div id="apiStatus" style="font-size: 0.8rem; color: var(--success);">
-                <i class="fas fa-circle"></i> API Online
+            <h1>Admin Dashboard</h1>
+            <div id="apiStatus">
+                <i class="fas fa-circle"></i> Checking status...
             </div>
         </header>
 
@@ -356,32 +303,31 @@
                 <div class="stat-label">Total Orders</div>
             </div>
             <div class="stat-card">
-                <i class="fas fa-indian-rupee-sign"></i>
+                <i class="fas fa-rupee-sign"></i>
                 <div class="stat-val" id="statRevenue">₹0</div>
                 <div class="stat-label">Total Revenue</div>
             </div>
             <div class="stat-card">
-                <i class="fas fa-newspaper"></i>
-                <div class="stat-val" id="statArticles">0</div>
-                <div class="stat-label">Articles</div>
+                <i class="fas fa-ticket-alt"></i>
+                <div class="stat-val" id="statPromos">0</div>
+                <div class="stat-label">Active Promos</div>
             </div>
             <div class="stat-card">
                 <i class="fas fa-users"></i>
-                <div class="stat-val" id="statPromos">0</div>
-                <div class="stat-label">Active Promos</div>
+                <div class="stat-val">1</div>
+                <div class="stat-label">Admin Active</div>
             </div>
         </div>
 
         <!-- Orders Section -->
         <section id="ordersSection" class="content-section active">
             <div class="section-header">
-                <h2>Recent Orders</h2>
-                <button class="btn btn-primary" onclick="loadData('orders')"><i class="fas fa-sync"></i> Refresh</button>
+                <h2>Manage Orders</h2>
             </div>
             <table id="ordersTable">
                 <thead>
                     <tr>
-                        <th>ID</th>
+                        <th>Order ID</th>
                         <th>Customer</th>
                         <th>Items</th>
                         <th>Total</th>
@@ -390,28 +336,7 @@
                     </tr>
                 </thead>
                 <tbody>
-                    <!-- JS population -->
-                </tbody>
-            </table>
-        </section>
-
-        <!-- Articles Section -->
-        <section id="articlesSection" class="content-section">
-            <div class="section-header">
-                <h2>Manage Articles</h2>
-                <button class="btn btn-primary" onclick="openModal('articleModal')"><i class="fas fa-plus"></i> New Article</button>
-            </div>
-            <table id="articlesTable">
-                <thead>
-                    <tr>
-                        <th>ID</th>
-                        <th>Title</th>
-                        <th>Category</th>
-                        <th>Action</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <!-- JS population -->
+                    <!-- Loaded via dashboard.js -->
                 </tbody>
             </table>
         </section>
@@ -420,7 +345,9 @@
         <section id="promosSection" class="content-section">
             <div class="section-header">
                 <h2>Promo Codes</h2>
-                <button class="btn btn-primary" onclick="openModal('promoModal')"><i class="fas fa-plus"></i> Add Code</button>
+                <button class="btn btn-primary" onclick="openModal('promoModal')">
+                    <i class="fas fa-plus"></i> New Promo
+                </button>
             </div>
             <table id="promosTable">
                 <thead>
@@ -428,11 +355,11 @@
                         <th>Code</th>
                         <th>Discount</th>
                         <th>Status</th>
-                        <th>Action</th>
+                        <th>Actions</th>
                     </tr>
                 </thead>
                 <tbody>
-                    <!-- JS population -->
+                    <!-- Loaded via dashboard.js -->
                 </tbody>
             </table>
         </section>
@@ -441,551 +368,58 @@
         <section id="settingsSection" class="content-section">
             <div class="section-header">
                 <h2>Site Settings</h2>
-                <button class="btn btn-primary" id="saveSettingsBtn">Save Changes</button>
             </div>
-            
-            <div style="max-width: 600px;">
-                <div class="form-group">
-                    <label>Announcement Bar Text</label>
-                    <textarea id="setAnnounceText" rows="2" placeholder="Text shown at the very top of the site..."></textarea>
-                </div>
-                
-                <div class="form-group">
-                    <label>Shipping Cost (₹)</label>
-                    <input type="number" id="setShippingCost" placeholder="e.g. 199">
-                </div>
-
+            <div class="settings-form" style="max-width: 600px;">
                 <div class="form-group">
                     <label>Store Name</label>
                     <input type="text" id="setStoreName" placeholder="Hridyang Collection">
                 </div>
-
                 <div class="form-group">
-                    <label>WhatsApp Contact Number (for Orders)</label>
-                    <input type="text" id="setWhatsApp" placeholder="e.g. 918791416116">
+                    <label>Announcement Bar Text</label>
+                    <textarea id="setAnnounceText" rows="2" placeholder="Welcome to Hridyang Collection..."></textarea>
                 </div>
+                <div class="form-group">
+                    <label>Flat Shipping Cost (₹)</label>
+                    <input type="number" id="setShippingCost" placeholder="199">
+                </div>
+                <div class="form-group">
+                    <label>WhatsApp Number (with Country Code)</label>
+                    <input type="text" id="setWhatsApp" placeholder="918791416116">
+                </div>
+                <button id="saveSettingsBtn" class="btn btn-primary">Save Changes</button>
             </div>
         </section>
     </main>
-    </main>
-
-    <!-- Article Modal -->
-    <div id="articleModal" class="modal-overlay">
-        <div class="modal-content">
-            <h3>Add New Article</h3>
-            <form id="articleForm">
-                <div class="form-group">
-                    <label>Title</label>
-                    <input type="text" id="artTitle" required placeholder="e.g. The Indigo Story">
-                </div>
-                <div class="form-group">
-                    <label>Category</label>
-                    <select id="artCategory">
-                        <option value="Handloom">Handloom</option>
-                        <option value="God Clothes">God Clothes</option>
-                        <option value="Fancy">Fancy Articles</option>
-                    </select>
-                </div>
-                <div class="form-group">
-                    <label>Description</label>
-                    <textarea id="artDesc" rows="3" placeholder="Brief snippet..."></textarea>
-                </div>
-                <div class="form-group">
-                    <label>Article Photo</label>
-                    <div style="display: flex; gap: 10px; margin-bottom: 10px;">
-                        <div class="drop-zone" id="dropZone" style="flex-grow: 1; margin-top: 0;">
-                            <span class="drop-zone__prompt">Drop or Click</span>
-                            <input type="file" name="myFile" class="drop-zone__input" id="artFileInput" accept="image/*">
-                        </div>
-                        <button type="button" class="btn" id="startCamera" style="height: 120px; width: 60px; display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 10px; background: #f9f9f9; border: 1px solid #eee;">
-                            <i class="fas fa-camera" style="font-size: 1.2rem; margin: 0;"></i>
-                            <span style="font-size: 0.6rem;">SNAP</span>
-                        </button>
-                    </div>
-                    
-                    <div id="cameraContainer">
-                        <video id="cameraVideo" autoplay playsinline></video>
-                        <button type="button" class="btn btn-primary" id="capturePhoto">Take Snapshot</button>
-                    </div>
-
-                    <input type="hidden" id="artImgBase64">
-                </div>
-                <div class="form-group" style="text-align: center; font-size: 0.8rem; color: #999;">
-                    — OR —
-                </div>
-                <div class="form-group">
-                    <label>Image URL (Optional)</label>
-                    <input type="url" id="artImg" placeholder="https://example.com/photo.jpg">
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn" onclick="closeModal('articleModal')">Cancel</button>
-                    <button type="submit" class="btn btn-primary">Save Article</button>
-                </div>
-            </form>
-        </div>
-    </div>
 
     <!-- Promo Modal -->
     <div id="promoModal" class="modal-overlay">
         <div class="modal-content">
-            <h3>Create Promo Code</h3>
+            <h3 id="promoModalTitle">Create Promo Code</h3>
             <form id="promoForm">
                 <div class="form-group">
                     <label>Promo Code</label>
-                    <input type="text" id="promoCode" required placeholder="e.g. FESTIVE20" style="text-transform: uppercase;">
+                    <input type="text" id="promoCode" required style="text-transform: uppercase;">
                 </div>
                 <div class="form-group">
                     <label>Discount Percentage (%)</label>
-                    <input type="number" id="promoDiscount" required min="1" max="100" placeholder="e.g. 20">
+                    <input type="number" id="promoDiscount" required min="1" max="100">
                 </div>
                 <div class="form-group">
                     <label>Min. Order Amount (₹)</label>
-                    <input type="number" id="promoMinAmount" value="0" min="0">
+                    <input type="number" id="promoMinAmount" value="0">
                 </div>
                 <div class="form-group">
-                    <label>Usage Limit (Max Uses)</label>
-                    <input type="number" id="promoLimit" value="100" min="1">
+                    <label>Usage Limit</label>
+                    <input type="number" id="promoLimit" value="9999">
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn" onclick="closeModal('promoModal')">Cancel</button>
-                    <button type="submit" class="btn btn-primary">Create Code</button>
+                    <button type="submit" class="btn btn-primary">Save Promo</button>
                 </div>
             </form>
         </div>
     </div>
 
-    <script type="module">
-        import { db, collection, getDocs, addDoc, query, orderBy, serverTimestamp, doc, getDoc, setDoc, updateDoc, increment, deleteDoc } from './firebase-config.js';
-
-        // Modal Helpers
-        window.openModal = (id) => document.getElementById(id).classList.add('active');
-        window.closeModal = (id) => document.getElementById(id).classList.remove('active');
-
-        async function switchSection(section) {
-            document.querySelectorAll('.content-section').forEach(s => s.classList.remove('active'));
-            document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
-            
-            const target = document.getElementById(section + 'Section');
-            if (target) target.classList.add('active');
-            
-            // Find the nav item
-            const items = document.querySelectorAll('.nav-item');
-            items.forEach(item => {
-                if (item.innerText.toLowerCase().includes(section)) {
-                    item.classList.add('active');
-                }
-            });
-            
-            loadData(section);
-        }
-
-        // Attach to window so onclick works
-        window.switchSection = switchSection;
-
-        async function loadData(type) {
-            try {
-                let q;
-                if (type === 'orders') {
-                    q = query(collection(db, "orders"), orderBy('createdAt', 'desc'));
-                } else if (type === 'articles') {
-                    q = query(collection(db, "articles"), orderBy('createdAt', 'desc'));
-                } else if (type === 'promos') {
-                    q = query(collection(db, "promos"), orderBy('createdAt', 'desc'));
-                }
-
-                if (q) {
-                    const querySnapshot = await getDocs(q);
-                    const data = [];
-                    querySnapshot.forEach((doc) => {
-                        data.push({ id: doc.id, ...doc.data() });
-                    });
-                    
-                    if (type === 'orders') renderOrders(data);
-                    if (type === 'articles') renderArticles(data);
-                    if (type === 'promos') renderPromos(data);
-                }
-                
-                if (type === 'settings') loadSettings();
-                
-                document.getElementById('apiStatus').innerHTML = '<i class="fas fa-circle"></i> Firebase Live';
-            } catch (err) {
-                console.error("Failed to fetch data", err);
-                document.getElementById('apiStatus').innerHTML = '<i class="fas fa-circle" style="color:var(--danger)"></i> Firebase Error';
-            }
-        }
-
-        window.loadData = loadData;
-
-        async function loadSettings() {
-            try {
-                const docRef = doc(db, "settings", "main");
-                const docSnap = await getDoc(docRef);
-                
-                if (docSnap.exists()) {
-                    const data = docSnap.data();
-                    document.getElementById('setAnnounceText').value = data.announcementText || "";
-                    document.getElementById('setShippingCost').value = data.shippingCost || 199;
-                    document.getElementById('setStoreName').value = data.storeName || "Hridyang Collection";
-                    document.getElementById('setWhatsApp').value = data.whatsAppNumber || "918791416116";
-                }
-            } catch (err) {
-                console.error("Error loading settings:", err);
-            }
-        }
-
-        document.getElementById('saveSettingsBtn').addEventListener('click', async () => {
-            const btn = document.getElementById('saveSettingsBtn');
-            btn.innerText = 'Saving...';
-            btn.disabled = true;
-
-            try {
-                const settingsData = {
-                    announcementText: document.getElementById('setAnnounceText').value,
-                    shippingCost: parseInt(document.getElementById('setShippingCost').value),
-                    storeName: document.getElementById('setStoreName').value,
-                    whatsAppNumber: document.getElementById('setWhatsApp').value,
-                    updatedAt: serverTimestamp()
-                };
-
-                await setDoc(doc(db, "settings", "main"), settingsData);
-                alert("Settings updated successfully!");
-            } catch (err) {
-                alert("Error saving settings: " + err.message);
-            } finally {
-                btn.innerText = 'Save Changes';
-                btn.disabled = false;
-            }
-        });
-
-        function renderOrders(orders) {
-            const tbody = document.querySelector('#ordersTable tbody');
-            tbody.innerHTML = orders.map(o => {
-                const date = o.createdAt ? new Date(o.createdAt.seconds * 1000).toLocaleDateString() : 'N/A';
-                const statusClass = o.status === 'Shipped' ? 'status-shipped' : 'status-pending';
-                return `
-                    <tr>
-                        <td>#${o.id.toString().slice(-4)}</td>
-                        <td>
-                            <div style="font-weight:600">${o.customerName}</div>
-                            <div style="font-size:0.8rem; color:var(--text-muted)">${o.phone}</div>
-                            <div style="font-size:0.75rem; color:#888; max-width:200px; line-height:1.2; margin-top:4px;">${o.address}</div>
-                        </td>
-                        <td>
-                            <div style="font-size:0.85rem;">
-                                ${o.items.map(item => `<div style="margin-bottom:2px;">• ${item.name} (x${item.quantity})</div>`).join('')}
-                            </div>
-                        </td>
-                        <td style="font-weight:600">₹${o.total.toLocaleString('en-IN')}</td>
-                        <td>${date}</td>
-                        <td>
-                            <select onchange="updateOrderStatus('${o.id}', this.value)" class="status-badge ${statusClass}" style="border:none; cursor:pointer; outline:none; font-family:inherit; padding: 5px 10px; border-radius: 12px; font-weight: 600;">
-                                <option value="Pending" ${o.status === 'Pending' ? 'selected' : ''}>Pending</option>
-                                <option value="Shipped" ${o.status === 'Shipped' ? 'selected' : ''}>Shipped</option>
-                                <option value="Delivered" ${o.status === 'Delivered' ? 'selected' : ''}>Delivered</option>
-                                <option value="Cancelled" ${o.status === 'Cancelled' ? 'selected' : ''}>Cancelled</option>
-                            </select>
-                        </td>
-                    </tr>
-                `}).join('');
-            
-            document.getElementById('statOrders').innerText = orders.length;
-            const revenue = orders.reduce((sum, o) => sum + o.total, 0);
-            document.getElementById('statRevenue').innerText = '₹' + revenue.toLocaleString('en-IN');
-        }
-
-        async function updateOrderStatus(orderId, newStatus) {
-            try {
-                await updateDoc(doc(db, "orders", orderId), { status: newStatus });
-                loadData('orders');
-            } catch (err) {
-                alert("Error updating order: " + err.message);
-            }
-        }
-        window.updateOrderStatus = updateOrderStatus;
-
-        function renderArticles(articles) {
-            const tbody = document.querySelector('#articlesTable tbody');
-            tbody.innerHTML = articles.map(a => `
-                <tr>
-                    <td><img src="${a.img || 'assets/indigo.png'}" style="width: 40px; height: 40px; object-fit: cover; border-radius: 4px;"></td>
-                    <td>${a.title}</td>
-                    <td>${a.category}</td>
-                    <td>
-                        <button class="btn" style="color:var(--primary)" onclick="editArticle('${a.id}')"><i class="fas fa-edit"></i></button>
-                        <button class="btn" style="color:var(--danger)" onclick="deleteItem('articles', '${a.id}')"><i class="fas fa-trash"></i></button>
-                    </td>
-                </tr>
-            `).join('');
-            document.getElementById('statArticles').innerText = articles.length;
-        }
-
-        let editingArticleId = null;
-
-        async function editArticle(id) {
-            editingArticleId = id;
-            try {
-                const docSnap = await getDoc(doc(db, "articles", id));
-                if (docSnap.exists()) {
-                    const data = docSnap.data();
-                    document.getElementById('artTitle').value = data.title;
-                    document.getElementById('artCategory').value = data.category;
-                    document.getElementById('artDesc').value = data.desc || "";
-                    document.getElementById('artImg').value = data.img.startsWith('data:') ? "" : data.img;
-                    document.getElementById('artImgBase64').value = data.img.startsWith('data:') ? data.img : "";
-                    
-                    if (data.img) {
-                        updateThumbnail(document.getElementById('dropZone'), null, data.img);
-                    }
-
-                    document.querySelector('#articleModal h3').innerText = 'Edit Article';
-                    openModal('articleModal');
-                }
-            } catch (err) {
-                alert("Error loading article: " + err.message);
-            }
-        }
-        window.editArticle = editArticle;
-
-        async function deleteItem(collectionName, id) {
-            if (!confirm(`Are you sure you want to delete this ${collectionName.slice(0,-1)}?`)) return;
-            try {
-                await deleteDoc(doc(db, collectionName, id));
-                loadData(collectionName);
-            } catch (err) {
-                alert("Error deleting item: " + err.message);
-            }
-        }
-        window.deleteItem = deleteItem;
-
-        function renderPromos(promos) {
-            const tbody = document.querySelector('#promosTable tbody');
-            tbody.innerHTML = promos.map(p => `
-                <tr>
-                    <td style="font-weight:bold">${p.code}</td>
-                    <td>${p.discount}% OFF</td>
-                    <td><span class="status-badge ${p.active ? 'status-shipped' : 'status-pending'}" onclick="togglePromoStatus('${p.id}', ${!p.active})" style="cursor:pointer">${p.active ? 'Active' : 'Inactive'}</span></td>
-                    <td>
-                        <button class="btn" style="color:var(--primary)" onclick="editPromo('${p.id}')"><i class="fas fa-edit"></i></button>
-                        <button class="btn" style="color:var(--danger)" onclick="deleteItem('promos', '${p.id}')"><i class="fas fa-trash"></i></button>
-                    </td>
-                </tr>
-            `).join('');
-            document.getElementById('statPromos').innerText = promos.filter(p => p.active).length;
-        }
-
-        let editingPromoId = null;
-
-        async function editPromo(id) {
-            editingPromoId = id;
-            try {
-                const docSnap = await getDoc(doc(db, "promos", id));
-                if (docSnap.exists()) {
-                    const data = docSnap.data();
-                    document.getElementById('promoCode').value = data.code;
-                    document.getElementById('promoDiscount').value = data.discount;
-                    document.getElementById('promoMinAmount').value = data.minAmount || 0;
-                    document.getElementById('promoLimit').value = data.usageLimit || 9999;
-                    
-                    document.querySelector('#promoModal h3').innerText = 'Edit Promo Code';
-                    openModal('promoModal');
-                }
-            } catch (err) {
-                alert("Error loading promo: " + err.message);
-            }
-        }
-        window.editPromo = editPromo;
-
-        async function togglePromoStatus(id, newStatus) {
-            try {
-                await updateDoc(doc(db, "promos", id), { active: newStatus });
-                loadData('promos');
-            } catch (err) {
-                alert("Error updating promo: " + err.message);
-            }
-        }
-        window.togglePromoStatus = togglePromoStatus;
-        
-        // deleteDoc is imported at the top of the module
-
-        // Drag & Drop Logic
-        document.querySelectorAll(".drop-zone").forEach((dropZoneElement) => {
-            const inputElement = dropZoneElement.querySelector(".drop-zone__input");
-
-            dropZoneElement.addEventListener("click", (e) => {
-                inputElement.click();
-            });
-
-            inputElement.addEventListener("change", (e) => {
-                if (inputElement.files.length) {
-                    updateThumbnail(dropZoneElement, inputElement.files[0]);
-                }
-            });
-
-            dropZoneElement.addEventListener("dragover", (e) => {
-                e.preventDefault();
-                dropZoneElement.classList.add("drop-zone--over");
-            });
-
-            ["dragleave", "dragend"].forEach((type) => {
-                dropZoneElement.addEventListener(type, (e) => {
-                    dropZoneElement.classList.remove("drop-zone--over");
-                });
-            });
-
-            dropZoneElement.addEventListener("drop", (e) => {
-                e.preventDefault();
-
-                if (e.dataTransfer.files.length) {
-                    inputElement.files = e.dataTransfer.files;
-                    updateThumbnail(dropZoneElement, e.dataTransfer.files[0]);
-                }
-
-                dropZoneElement.classList.remove("drop-zone--over");
-            });
-        });
-
-        // Camera Logic
-        const startCamBtn = document.getElementById('startCamera');
-        const cameraContainer = document.getElementById('cameraContainer');
-        const video = document.getElementById('cameraVideo');
-        const captureBtn = document.getElementById('capturePhoto');
-        let stream = null;
-
-        startCamBtn.addEventListener('click', async () => {
-            try {
-                stream = await navigator.mediaDevices.getUserMedia({ video: true });
-                video.srcObject = stream;
-                cameraContainer.style.display = 'flex';
-                startCamBtn.style.display = 'none';
-                document.getElementById('dropZone').style.display = 'none';
-            } catch (err) {
-                alert("Could not access camera: " + err.message);
-            }
-        });
-
-        captureBtn.addEventListener('click', () => {
-            const canvas = document.createElement('canvas');
-            canvas.width = video.videoWidth;
-            canvas.height = video.videoHeight;
-            canvas.getContext('2d').drawImage(video, 0, 0);
-            
-            const dataUrl = canvas.toDataURL('image/jpeg');
-            const dropZone = document.getElementById('dropZone');
-            
-            // Re-show dropzone with preview
-            cameraContainer.style.display = 'none';
-            dropZone.style.display = 'flex';
-            startCamBtn.style.display = 'flex';
-            
-            updateThumbnail(dropZone, null, dataUrl);
-            
-            // Stop camera
-            stream.getTracks().forEach(track => track.stop());
-        });
-
-        function updateThumbnail(dropZoneElement, file, dataUrl = null) {
-            let thumbnailElement = dropZoneElement.querySelector(".drop-zone__thumb");
-
-            if (dropZoneElement.querySelector(".drop-zone__prompt")) {
-                dropZoneElement.querySelector(".drop-zone__prompt").remove();
-            }
-
-            if (!thumbnailElement) {
-                thumbnailElement = document.createElement("div");
-                thumbnailElement.classList.add("drop-zone__thumb");
-                dropZoneElement.appendChild(thumbnailElement);
-            }
-
-            if (file) {
-                thumbnailElement.dataset.label = file.name;
-                const reader = new FileReader();
-                reader.readAsDataURL(file);
-                reader.onload = () => {
-                    thumbnailElement.style.backgroundImage = `url('${reader.result}')`;
-                    document.getElementById('artImgBase64').value = reader.result;
-                };
-            } else if (dataUrl) {
-                thumbnailElement.style.backgroundImage = `url('${dataUrl}')`;
-                document.getElementById('artImgBase64').value = dataUrl;
-            }
-        }
-
-        // Form Submissions
-        document.getElementById('articleForm').addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const btn = e.target.querySelector('button[type="submit"]');
-            btn.innerText = 'Saving...';
-            try {
-                const articleData = {
-                    title: document.getElementById('artTitle').value,
-                    category: document.getElementById('artCategory').value,
-                    desc: document.getElementById('artDesc').value,
-                    img: document.getElementById('artImgBase64').value || document.getElementById('artImg').value || 'assets/indigo.png',
-                    updatedAt: serverTimestamp()
-                };
-
-                if (editingArticleId) {
-                    await updateDoc(doc(db, "articles", editingArticleId), articleData);
-                } else {
-                    articleData.createdAt = serverTimestamp();
-                    await addDoc(collection(db, "articles"), articleData);
-                }
-
-                closeModal('articleModal');
-                e.target.reset();
-                editingArticleId = null;
-                document.querySelector('#articleModal h3').innerText = 'Add New Article';
-                
-                // Reset dropzone visually without breaking events
-                const dropZone = document.getElementById('dropZone');
-                const thumb = dropZone.querySelector('.drop-zone__thumb');
-                if (thumb) thumb.remove();
-                if (!dropZone.querySelector('.drop-zone__prompt')) {
-                    const prompt = document.createElement('span');
-                    prompt.className = 'drop-zone__prompt';
-                    prompt.innerText = 'Drop or Click';
-                    dropZone.appendChild(prompt);
-                }
-                document.getElementById('artImgBase64').value = "";
-                
-                loadData('articles');
-            } catch (err) { alert("Error saving article: " + err.message); }
-            finally { btn.innerText = 'Save Article'; }
-        });
-
-        document.getElementById('promoForm').addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const btn = e.target.querySelector('button[type="submit"]');
-            btn.innerText = editingPromoId ? 'Updating...' : 'Creating...';
-            try {
-                const promoData = {
-                    code: document.getElementById('promoCode').value.toUpperCase(),
-                    discount: parseInt(document.getElementById('promoDiscount').value),
-                    minAmount: parseInt(document.getElementById('promoMinAmount').value) || 0,
-                    usageLimit: parseInt(document.getElementById('promoLimit').value) || 9999,
-                    updatedAt: serverTimestamp()
-                };
-
-                if (editingPromoId) {
-                    await updateDoc(doc(db, "promos", editingPromoId), promoData);
-                } else {
-                    promoData.active = true;
-                    promoData.usedCount = 0;
-                    promoData.createdAt = serverTimestamp();
-                    await addDoc(collection(db, "promos"), promoData);
-                }
-
-                closeModal('promoModal');
-                e.target.reset();
-                editingPromoId = null;
-                document.querySelector('#promoModal h3').innerText = 'Create Promo Code';
-                loadData('promos');
-            } catch (err) { alert("Error saving promo: " + err.message); }
-            finally { btn.innerText = editingPromoId ? 'Update Code' : 'Create Code'; }
-        });
-
-        // Initial Load
-        loadData('orders');
-    </script>
+    <script type="module" src="dashboard.js"></script>
 </body>
 </html>
