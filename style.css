@@ -733,6 +733,7 @@ footer {
 /* --- Mobile --- */
 @media (max-width: 1024px) {
     .category-grid { grid-template-columns: repeat(2, 1fr); }
+    .category-card:last-child:nth-child(odd) { grid-column: span 2; }
     .shop-grid { grid-template-columns: repeat(2, 1fr); }
     .hero-split { flex-direction: column; }
     .hero { height: auto; }
