@@ -342,6 +342,7 @@ document.addEventListener('click', function (e) {
 
             // Immediately sync with cart
             const productCard = e.target.closest('.product-card');
+            if (productCard) {
                 const productId = productCard.getAttribute('data-id');
                 const productName = productCard.querySelector('h3').innerText;
                 const priceElement = productCard.querySelector('.price');
