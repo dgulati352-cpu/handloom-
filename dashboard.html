@@ -184,8 +184,14 @@
             font-weight: 500;
         }
 
-        .status-pending { background: #fff5f5; color: var(--danger); }
-        .status-shipped { background: #f0fff4; color: var(--success); }
+        .status-pending { background: #fff5f5; color: var(--danger); border: 1px solid #feb2b2; }
+        .status-shipped { background: #f0f9ff; color: var(--primary); border: 1px solid #bae6fd; }
+        .status-delivered { background: #f0fff4; color: var(--success); border: 1px solid #c6f6d5; }
+        .status-cancelled { background: #edf2f7; color: #4a5568; border: 1px solid #e2e8f0; }
+
+        tr:hover td {
+            background: #fafafa;
+        }
 
         .btn {
             padding: 10px 20px;
@@ -279,8 +285,11 @@
             <li class="nav-item active" onclick="switchSection('orders')">
                 <i class="fas fa-shopping-bag"></i> Orders
             </li>
+            <li class="nav-item" onclick="switchSection('articles')">
+                <i class="fas fa-box"></i> Articles
+            </li>
             <li class="nav-item" onclick="switchSection('promos')">
-                <i class="fas fa-tag"></i> Promo Codes
+                <i class="fas fa-ticket-alt"></i> Promos
             </li>
             <li class="nav-item" onclick="switchSection('settings')">
                 <i class="fas fa-cog"></i> Site Settings
@@ -313,6 +322,11 @@
                 <div class="stat-label">Active Promos</div>
             </div>
             <div class="stat-card">
+                <i class="fas fa-box"></i>
+                <div class="stat-val" id="statArticles">0</div>
+                <div class="stat-label">Total Articles</div>
+            </div>
+            <div class="stat-card">
                 <i class="fas fa-users"></i>
                 <div class="stat-val">1</div>
                 <div class="stat-label">Admin Active</div>
@@ -333,6 +347,30 @@
                         <th>Total</th>
                         <th>Date</th>
                         <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <!-- Loaded via dashboard.js -->
+                </tbody>
+            </table>
+        </section>
+
+        <!-- Articles Section -->
+        <section id="articlesSection" class="content-section">
+            <div class="section-header">
+                <h2>Manage Articles (Products)</h2>
+                <button class="btn btn-primary" onclick="openModal('articleModal')">
+                    <i class="fas fa-plus"></i> New Article
+                </button>
+            </div>
+            <table id="articlesTable">
+                <thead>
+                    <tr>
+                        <th>Image</th>
+                        <th>Name</th>
+                        <th>Category</th>
+                        <th>Price</th>
+                        <th>Actions</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -386,6 +424,11 @@
                     <label>WhatsApp Number (with Country Code)</label>
                     <input type="text" id="setWhatsApp" placeholder="918791416116">
                 </div>
+                <div class="form-group">
+                    <label>WhatsApp API Key (CallMeBot)</label>
+                    <input type="password" id="setWhatsAppKey" placeholder="Get from callmebot.com">
+                    <small style="color: #666; font-size: 0.8rem; display: block; margin-top: 5px;">Required for order notifications. Get your key by sending "I allow callmebot to send me messages" to +34 644 10 55 15 on WhatsApp.</small>
+                </div>
                 <button id="saveSettingsBtn" class="btn btn-primary">Save Changes</button>
             </div>
         </section>
@@ -415,6 +458,57 @@
                 <div class="modal-footer">
                     <button type="button" class="btn" onclick="closeModal('promoModal')">Cancel</button>
                     <button type="submit" class="btn btn-primary">Save Promo</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Article Modal -->
+    <div id="articleModal" class="modal-overlay">
+        <div class="modal-content">
+            <h3 id="articleModalTitle">Add New Article</h3>
+            <form id="articleForm">
+                <div class="form-group">
+                    <label>Article Name</label>
+                    <input type="text" id="artName" required>
+                </div>
+                <div class="form-group">
+                    <label>Category</label>
+                    <select id="artCategory" required>
+                        <option value="HANDLOOM">Handloom</option>
+                        <option value="GOD CLOTHES">God Clothes</option>
+                        <option value="FANCY ARTICLES">Fancy Articles</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Price (₹)</label>
+                    <input type="number" id="artPrice" required>
+                </div>
+                <div class="form-group">
+                    <label>Style No.</label>
+                    <input type="text" id="artStyleNo" placeholder="e.g. AFG416">
+                </div>
+                <div class="form-group">
+                    <label>Stock Quantity</label>
+                    <input type="number" id="artStock" value="10" required>
+                </div>
+                <div class="form-group">
+                    <label>Product Image</label>
+                    <div class="image-upload-container" style="border: 2px dashed #ddd; padding: 20px; text-align: center; border-radius: 8px; cursor: pointer; position: relative;" onclick="document.getElementById('artImageFile').click()">
+                        <input type="file" id="artImageFile" accept="image/*" style="display: none;">
+                        <div id="imagePreview" style="display: none; margin-bottom: 10px;">
+                            <img src="" id="previewImg" style="max-width: 100%; max-height: 150px; border-radius: 4px; border: 1px solid #eee;">
+                        </div>
+                        <div id="uploadPlaceholder">
+                            <i class="fas fa-cloud-upload-alt" style="font-size: 24px; color: var(--primary); margin-bottom: 10px;"></i>
+                            <p style="margin:0; font-size: 0.9rem; color: #666;">Click to upload or drag image</p>
+                        </div>
+                    </div>
+                    <input type="hidden" id="artImage">
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn" onclick="closeModal('articleModal')">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Save Article</button>
                 </div>
             </form>
         </div>

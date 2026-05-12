@@ -1,4 +1,4 @@
-import { db, collection, addDoc, getDocs, query, where, doc, updateDoc, increment, serverTimestamp, getDoc, onSnapshot } from './firebase-config.js';
+import { db, collection, addDoc, getDocs, query, where, orderBy, doc, updateDoc, increment, serverTimestamp, getDoc, onSnapshot } from './firebase-config.js';
 import { API_BASE_URL, RAZORPAY_KEY, DEFAULT_SETTINGS } from './constants.js';
 
 // Global Settings State
@@ -42,6 +42,87 @@ async function checkBackendStatus() {
     }
 }
 window.checkBackendStatus = checkBackendStatus; // Make globally accessible for the button
+
+async function loadArticles() {
+    const productGrid = document.querySelector('.product-grid');
+    const shopGrid = document.querySelector('.shop-grid');
+    if (!productGrid && !shopGrid) return;
+
+    // Check which category we need for specific pages
+    let categoryFilter = null;
+    if (window.location.pathname.includes('handloom.html')) categoryFilter = 'HANDLOOM';
+    if (window.location.pathname.includes('god-clothes.html')) categoryFilter = 'GOD CLOTHES';
+    if (window.location.pathname.includes('fancy-articles.html')) categoryFilter = 'FANCY ARTICLES';
+
+    try {
+        let q;
+        if (categoryFilter) {
+            q = query(collection(db, "articles"), where("category", "==", categoryFilter), orderBy('createdAt', 'desc'));
+        } else {
+            q = query(collection(db, "articles"), orderBy('createdAt', 'desc'));
+        }
+
+        // Use onSnapshot for REAL-TIME inventory updates
+        onSnapshot(q, (querySnapshot) => {
+            const articles = [];
+            querySnapshot.forEach(doc => articles.push({ id: doc.id, ...doc.data() }));
+
+            // Render helper
+            const renderTo = (grid, articlesToRender) => {
+                if (!grid || articlesToRender.length === 0) return;
+                grid.innerHTML = articlesToRender.map(a => {
+                    const isOutOfStock = (a.stock !== undefined && a.stock <= 0);
+                    return `
+                    <div class="product-card reveal active ${isOutOfStock ? 'out-of-stock' : ''}" data-id="${a.id}">
+                        <div class="product-img" style="position: relative;">
+                            <img src="${a.image || 'assets/placeholder.png'}" alt="${a.name}" style="${isOutOfStock ? 'filter: grayscale(1); opacity: 0.7;' : ''}">
+                            ${isOutOfStock ? 
+                                `<div class="out-of-stock-badge" style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: rgba(0,0,0,0.7); color: white; padding: 10px 20px; font-weight: 600; letter-spacing: 2px; font-size: 0.8rem; border-radius: 4px; pointer-events: none;">OUT OF STOCK</div>` 
+                                : `<div class="quick-add"><button><i class="fas fa-shopping-cart"></i> Quick Add</button></div>`
+                            }
+                        </div>
+                        <div class="product-info">
+                            <p class="category-label">${a.category}</p>
+                            <h3>${a.name}</h3>
+                            ${a.styleNo ? `<p class="style-no">STYLE NO. ${a.styleNo}</p>` : ''}
+                            <div class="price">From ₹${a.price.toLocaleString('en-IN')}</div>
+                            ${isOutOfStock ? 
+                                `<div class="out-of-stock-msg" style="color:#e53e3e; font-weight:600; font-size:0.85rem; margin-top:15px; text-transform: uppercase;">Currently Unavailable</div>`
+                                : `<div class="quantity-selector">
+                                    <button class="qty-btn minus">-</button>
+                                    <input type="number" class="qty-input" value="0" min="0" max="${a.stock || 10}">
+                                    <button class="qty-btn plus">+</button>
+                                </div>`
+                            }
+                        </div>
+                    </div>
+                `}).join('');
+            };
+
+            if (categoryFilter) {
+                renderTo(productGrid, articles);
+                renderTo(shopGrid, articles);
+            } else {
+                // Homepage logic
+                if (productGrid) renderTo(productGrid, articles.slice(0, 8));
+                
+                // Signature Weaves section - show everything mixed
+                if (shopGrid) renderTo(shopGrid, articles.slice(0, 8));
+                
+                // Specific Highlights by Category
+                const handloomGrid = document.getElementById('handloom-grid');
+                const godClothesGrid = document.getElementById('god-clothes-grid');
+                const fancyGrid = document.getElementById('fancy-articles-grid');
+
+                if (handloomGrid) renderTo(handloomGrid, articles.filter(a => a.category === 'HANDLOOM').slice(0, 4));
+                if (godClothesGrid) renderTo(godClothesGrid, articles.filter(a => a.category === 'GOD CLOTHES').slice(0, 4));
+                if (fancyGrid) renderTo(fancyGrid, articles.filter(a => a.category === 'FANCY ARTICLES').slice(0, 4));
+            }
+        });
+    } catch (err) {
+        console.error("Error loading articles:", err);
+    }
+}
 
 function initSiteSettings() {
     try {
@@ -163,6 +244,7 @@ let cart = JSON.parse(localStorage.getItem('vanyaCart')) || [];
 // Initialize
 initSiteSettings();
 checkBackendStatus();
+loadArticles();
 updateCartUI();
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -177,21 +259,27 @@ document.addEventListener('click', function (e) {
     const quickAddBtn = e.target.closest('.quick-add button');
     if (quickAddBtn) {
         const productCard = quickAddBtn.closest('.product-card');
-        const productName = productCard.querySelector('h3').innerText;
-        const priceStr = productCard.querySelector('.price').innerText;
-        const qtyInput = productCard.querySelector('.qty-input');
-        const quantity = qtyInput ? parseInt(qtyInput.value) : 1;
-        const imgSrc = productCard.querySelector('img').src;
+        const productId = productCard.getAttribute('data-id');
 
-        // Parse price (remove "From ₹" and commas)
+        const productName = productCard.querySelector('h3').innerText;
+        const priceElement = productCard.querySelector('.price');
+        const priceStr = priceElement.innerText;
         const price = parseInt(priceStr.replace(/[^0-9]/g, ''));
+        const imgSrc = productCard.querySelector('img').src;
+        const quantity = 1;
+
+        // Check if item is already out of stock visually (extra safety)
+        if (productCard.classList.contains('out-of-stock')) {
+            alert("This item is currently out of stock.");
+            return;
+        }
 
         // Add to cart array
-        const existingItem = cart.find(item => item.name === productName);
+        const existingItem = cart.find(item => item.id === productId);
         if (existingItem) {
             existingItem.quantity += quantity;
         } else {
-            cart.push({ name: productName, price: price, quantity: quantity, img: imgSrc });
+            cart.push({ id: productId, name: productName, price: price, quantity: quantity, img: imgSrc });
         }
 
         updateCartUI();
@@ -254,7 +342,7 @@ document.addEventListener('click', function (e) {
 
             // Immediately sync with cart
             const productCard = e.target.closest('.product-card');
-            if (productCard) {
+                const productId = productCard.getAttribute('data-id');
                 const productName = productCard.querySelector('h3').innerText;
                 const priceElement = productCard.querySelector('.price');
                 let priceStr = priceElement.innerText.split('\n')[0];
@@ -265,7 +353,7 @@ document.addEventListener('click', function (e) {
                 
                 const finalQuantity = parseInt(input.value);
 
-                const existingItemIndex = cart.findIndex(item => item.name === productName);
+                const existingItemIndex = cart.findIndex(item => item.id === productId);
 
                 if (finalQuantity === 0) {
                     if (existingItemIndex > -1) {
@@ -275,7 +363,7 @@ document.addEventListener('click', function (e) {
                     if (existingItemIndex > -1) {
                         cart[existingItemIndex].quantity = finalQuantity;
                     } else {
-                        cart.push({ name: productName, price: price, quantity: finalQuantity, img: imgSrc });
+                        cart.push({ id: productId, name: productName, price: price, quantity: finalQuantity, img: imgSrc });
                     }
                 }
 
@@ -642,6 +730,19 @@ if (window.location.pathname.includes('checkout.html')) {
 
                     const docRef = await addDoc(collection(db, "orders"), orderData);
 
+                    // Update Stock
+                    for (const item of cart) {
+                        if (item.id) {
+                            try {
+                                await updateDoc(doc(db, "articles", item.id), {
+                                    stock: increment(-item.quantity)
+                                });
+                            } catch (sErr) {
+                                console.warn("Could not update stock for item:", item.id, sErr);
+                            }
+                        }
+                    }
+
                     // Show Success UI
                     document.querySelector('.checkout-container').innerHTML = `
                         <div style="text-align: center; padding: 100px 20px; width: 100%;">
@@ -752,6 +853,19 @@ if (window.location.pathname.includes('checkout.html')) {
                                 };
 
                                 const docRef = await addDoc(collection(db, "orders"), orderData);
+
+                                // Update Stock
+                                for (const item of cart) {
+                                    if (item.id) {
+                                        try {
+                                            await updateDoc(doc(db, "articles", item.id), {
+                                                stock: increment(-item.quantity)
+                                            });
+                                        } catch (sErr) {
+                                            console.warn("Could not update stock for item:", item.id, sErr);
+                                        }
+                                    }
+                                }
                                 
                                 // WhatsApp Notification
                                 let orderText = `*Order Confirmed - Hridyang Collection*\n\n`;

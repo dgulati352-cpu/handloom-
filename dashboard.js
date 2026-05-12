@@ -1,4 +1,21 @@
-import { db, collection, getDocs, addDoc, query, orderBy, serverTimestamp, doc, getDoc, setDoc, updateDoc, increment, deleteDoc } from './firebase-config.js';
+import { db, storage, ref, uploadBytes, getDownloadURL, collection, getDocs, addDoc, query, orderBy, serverTimestamp, doc, getDoc, setDoc, updateDoc, increment, deleteDoc } from './firebase-config.js';
+
+// Image Preview Logic
+const artImageFile = document.getElementById('artImageFile');
+if (artImageFile) {
+    artImageFile.addEventListener('change', function() {
+        const file = this.files[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                document.getElementById('previewImg').src = e.target.result;
+                document.getElementById('imagePreview').style.display = 'block';
+                document.getElementById('uploadPlaceholder').style.display = 'none';
+            }
+            reader.readAsDataURL(file);
+        }
+    });
+}
 
 // Modal Helpers
 window.openModal = (id) => document.getElementById(id).classList.add('active');
@@ -32,6 +49,8 @@ async function loadData(type) {
             q = query(collection(db, "orders"), orderBy('createdAt', 'desc'));
         } else if (type === 'promos') {
             q = query(collection(db, "promos"), orderBy('createdAt', 'desc'));
+        } else if (type === 'articles') {
+            q = query(collection(db, "articles"), orderBy('createdAt', 'desc'));
         }
 
         if (q) {
@@ -43,6 +62,7 @@ async function loadData(type) {
             
             if (type === 'orders') renderOrders(data);
             if (type === 'promos') renderPromos(data);
+            if (type === 'articles') renderArticles(data);
         }
         
         if (type === 'settings') loadSettings();
@@ -67,6 +87,7 @@ async function loadSettings() {
             document.getElementById('setShippingCost').value = data.shippingCost || 199;
             document.getElementById('setStoreName').value = data.storeName || "Hridyang Collection";
             document.getElementById('setWhatsApp').value = data.whatsAppNumber || "918791416116";
+            document.getElementById('setWhatsAppKey').value = data.callMeBotKey || "";
         }
     } catch (err) {
         console.error("Error loading settings:", err);
@@ -85,6 +106,7 @@ if (saveSettingsBtn) {
                 shippingCost: parseInt(document.getElementById('setShippingCost').value),
                 storeName: document.getElementById('setStoreName').value,
                 whatsAppNumber: document.getElementById('setWhatsApp').value,
+                callMeBotKey: document.getElementById('setWhatsAppKey').value,
                 updatedAt: serverTimestamp()
             };
 
@@ -105,7 +127,13 @@ function renderOrders(orders) {
 
     tbody.innerHTML = orders.map(o => {
         const date = o.createdAt ? new Date(o.createdAt.seconds * 1000).toLocaleDateString() : 'N/A';
-        const statusClass = o.status === 'Shipped' ? 'status-shipped' : 'status-pending';
+        
+        // Dynamic Status Class
+        let statusClass = 'status-pending';
+        if (o.status === 'Shipped') statusClass = 'status-shipped';
+        if (o.status === 'Delivered') statusClass = 'status-delivered';
+        if (o.status === 'Cancelled') statusClass = 'status-cancelled';
+
         return `
             <tr>
                 <td>#${o.id.toString().slice(-4)}</td>
@@ -147,8 +175,37 @@ function renderOrders(orders) {
 
 async function updateOrderStatus(orderId, newStatus) {
     try {
-        await updateDoc(doc(db, "orders", orderId), { status: newStatus });
-        loadData('orders');
+        const orderRef = doc(db, "orders", orderId);
+        const orderSnap = await getDoc(orderRef);
+        
+        if (orderSnap.exists()) {
+            const orderData = orderSnap.data();
+            const oldStatus = orderData.status;
+
+            // Handle Stock Synchronization
+            if (newStatus === 'Cancelled' && oldStatus !== 'Cancelled') {
+                // Increment stock back
+                for (const item of (orderData.items || [])) {
+                    if (item.id) {
+                        await updateDoc(doc(db, "articles", item.id), {
+                            stock: increment(item.quantity)
+                        });
+                    }
+                }
+            } else if (oldStatus === 'Cancelled' && newStatus !== 'Cancelled') {
+                // Decrement stock again
+                for (const item of (orderData.items || [])) {
+                    if (item.id) {
+                        await updateDoc(doc(db, "articles", item.id), {
+                            stock: increment(-item.quantity)
+                        });
+                    }
+                }
+            }
+
+            await updateDoc(orderRef, { status: newStatus });
+            loadData('orders');
+        }
     } catch (err) {
         alert("Error updating order: " + err.message);
     }
@@ -186,6 +243,32 @@ function renderPromos(promos) {
     if (statPromos) statPromos.innerText = promos.filter(p => p.active).length;
 }
 
+function renderArticles(articles) {
+    const tbody = document.querySelector('#articlesTable tbody');
+    if (!tbody) return;
+
+    tbody.innerHTML = articles.map(a => `
+        <tr>
+            <td><img src="${a.image || 'assets/placeholder.png'}" style="width:50px; height:50px; object-fit:cover; border-radius:4px;"></td>
+            <td style="font-weight:600">${a.name}</td>
+            <td><span class="status-badge" style="background:#eee; color:#666">${a.category}</span></td>
+            <td style="font-weight:600">₹${a.price.toLocaleString('en-IN')}</td>
+            <td>
+                <span class="status-badge ${a.stock > 0 ? 'status-shipped' : 'status-pending'}" style="font-size:0.75rem">
+                    ${a.stock > 0 ? `${a.stock} In Stock` : 'Out of Stock'}
+                </span>
+            </td>
+            <td>
+                <button class="btn" style="color:var(--primary)" onclick="editArticle('${a.id}')"><i class="fas fa-edit"></i></button>
+                <button class="btn" style="color:var(--danger)" onclick="deleteItem('articles', '${a.id}')"><i class="fas fa-trash"></i></button>
+            </td>
+        </tr>
+    `).join('');
+
+    const statArticles = document.getElementById('statArticles');
+    if (statArticles) statArticles.innerText = articles.length;
+}
+
 let editingPromoId = null;
 
 async function editPromo(id) {
@@ -199,7 +282,7 @@ async function editPromo(id) {
             document.getElementById('promoMinAmount').value = data.minAmount || 0;
             document.getElementById('promoLimit').value = data.usageLimit || 9999;
             
-            document.querySelector('#promoModal h3').innerText = 'Edit Promo Code';
+            document.getElementById('promoModalTitle').innerText = 'Edit Promo Code';
             openModal('promoModal');
         }
     } catch (err) {
@@ -207,6 +290,40 @@ async function editPromo(id) {
     }
 }
 window.editPromo = editPromo;
+
+let editingArticleId = null;
+
+async function editArticle(id) {
+    editingArticleId = id;
+    try {
+        const docSnap = await getDoc(doc(db, "articles", id));
+        if (docSnap.exists()) {
+            const data = docSnap.data();
+            document.getElementById('artName').value = data.name;
+            document.getElementById('artCategory').value = data.category;
+            document.getElementById('artPrice').value = data.price;
+            document.getElementById('artStyleNo').value = data.styleNo || "";
+            document.getElementById('artStock').value = data.stock || 0;
+            document.getElementById('artImage').value = data.image || "";
+            
+            // Set preview
+            if (data.image) {
+                document.getElementById('previewImg').src = data.image;
+                document.getElementById('imagePreview').style.display = 'block';
+                document.getElementById('uploadPlaceholder').style.display = 'none';
+            } else {
+                document.getElementById('imagePreview').style.display = 'none';
+                document.getElementById('uploadPlaceholder').style.display = 'block';
+            }
+            
+            document.getElementById('articleModalTitle').innerText = 'Edit Article';
+            openModal('articleModal');
+        }
+    } catch (err) {
+        alert("Error loading article: " + err.message);
+    }
+}
+window.editArticle = editArticle;
 
 async function togglePromoStatus(id, newStatus) {
     try {
@@ -248,10 +365,63 @@ if (promoForm) {
             closeModal('promoModal');
             e.target.reset();
             editingPromoId = null;
-            document.querySelector('#promoModal h3').innerText = 'Create Promo Code';
+            document.getElementById('promoModalTitle').innerText = 'Create Promo Code';
             loadData('promos');
         } catch (err) { 
             alert("Error saving promo: " + err.message); 
+        } finally { 
+            btn.innerText = originalText;
+            btn.disabled = false;
+        }
+    });
+}
+
+const articleForm = document.getElementById('articleForm');
+if (articleForm) {
+    articleForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const btn = e.target.querySelector('button[type="submit"]');
+        const originalText = btn.innerText;
+        btn.innerText = editingArticleId ? 'Updating...' : 'Creating...';
+        btn.disabled = true;
+
+        try {
+            let imageUrl = document.getElementById('artImage').value;
+            const imageFile = document.getElementById('artImageFile').files[0];
+
+            if (imageFile) {
+                btn.innerText = 'Uploading Image...';
+                const storageRef = ref(storage, `articles/${Date.now()}_${imageFile.name}`);
+                const snapshot = await uploadBytes(storageRef, imageFile);
+                imageUrl = await getDownloadURL(snapshot.ref);
+            }
+
+            const articleData = {
+                name: document.getElementById('artName').value,
+                category: document.getElementById('artCategory').value,
+                price: parseInt(document.getElementById('artPrice').value),
+                styleNo: document.getElementById('artStyleNo').value,
+                stock: parseInt(document.getElementById('artStock').value) || 0,
+                image: imageUrl,
+                updatedAt: serverTimestamp()
+            };
+
+            if (editingArticleId) {
+                await updateDoc(doc(db, "articles", editingArticleId), articleData);
+            } else {
+                articleData.createdAt = serverTimestamp();
+                await addDoc(collection(db, "articles"), articleData);
+            }
+
+            closeModal('articleModal');
+            e.target.reset();
+            document.getElementById('imagePreview').style.display = 'none';
+            document.getElementById('uploadPlaceholder').style.display = 'block';
+            editingArticleId = null;
+            document.getElementById('articleModalTitle').innerText = 'Add New Article';
+            loadData('articles');
+        } catch (err) { 
+            alert("Error saving article: " + err.message); 
         } finally { 
             btn.innerText = originalText;
             btn.disabled = false;

@@ -96,8 +96,15 @@
                 <div class="category-content">
                     <h3>God Clothes</h3>
                     <p>Divine attire for sacred occasions. Pure silks and intricate weaves dedicated to the gods.</p>
-                    <a href="god-clothes.html" class="explore-link">Explore Collection <i
-                            class="fas fa-arrow-right"></i></a>
+                    <a href="god-clothes.html" class="explore-link">Explore Collection <i class="fas fa-arrow-right"></i></a>
+                </div>
+            </div>
+            <div class="category-card">
+                <img src="assets/artisan.png" alt="Fancy Articles">
+                <div class="category-content">
+                    <h3>Fancy Articles</h3>
+                    <p>Contemporary designs meets traditional craftsmanship. Elegant accessories and modern essentials.</p>
+                    <a href="fancy-articles.html" class="explore-link">Explore Collection <i class="fas fa-arrow-right"></i></a>
                 </div>
             </div>
         </div>
@@ -220,54 +227,41 @@
             <p>Direct from our master weavers' looms to your doorstep.</p>
             <div class="title-underline"></div>
         </div>
-        <div class="shop-grid">
-            <div class="product-card">
-                <div class="product-img">
-                    <img src="assets/cotton.png" alt="Handloom Bloom Cotton">
-                    <div class="product-badge danger">Trending</div>
-                    <div class="quick-add"><button><i class="fas fa-shopping-cart"></i> Quick Add</button></div>
-                </div>
-                <div class="product-info">
-                    <p class="category-label">HANDLOOM</p>
-                    <h3>Handloom Bloom Cotton</h3>
-                    <p class="style-no">STYLE NO. AFG416</p>
-                    <div class="price">From ₹1,200/mtr</div>
-                    <div class="swatches">
-                        <span class="swatch" style="background: #228B22;"></span>
-                        <span class="swatch" style="background: #E6E6FA;"></span>
-                    </div>
-                    <div class="quantity-selector">
-                        <button class="qty-btn minus">-</button>
-                        <input type="number" class="qty-input" value="0" min="0" max="10">
-                        <button class="qty-btn plus">+</button>
-                    </div>
-                </div>
-            </div>
-
-            <div class="product-card">
-                <div class="product-img">
-                    <img src="assets/cotton.png" alt="Breathable Linen Set" style="filter: hue-rotate(45deg);">
-                    <div class="quick-add"><button><i class="fas fa-shopping-cart"></i> Quick Add</button></div>
-                </div>
-                <div class="product-info">
-                    <p class="category-label">HANDLOOM</p>
-                    <h3>Breathable Linen Set</h3>
-                    <p class="style-no">STYLE NO. TP01</p>
-                    <div class="price">From ₹2,500</div>
-                    <div class="swatches">
-                        <span class="swatch" style="background: #F0E68C;"></span>
-                        <span class="swatch" style="background: #87CEEB;"></span>
-                    </div>
-                    <div class="quantity-selector">
-                        <button class="qty-btn minus">-</button>
-                        <input type="number" class="qty-input" value="0" min="0" max="10">
-                        <button class="qty-btn plus">+</button>
-                    </div>
-                </div>
-            </div>
+        <div class="shop-grid" id="handloom-grid">
+            <!-- Dynamic products will be loaded here -->
         </div>
         <div style="text-align: center; margin-top: 40px;">
             <a href="handloom.html" class="btn">View Full Handloom Collection</a>
+        </div>
+    </section>
+
+    <section class="section reveal" id="god-clothes-highlights" style="background-color: #fcf8f3;">
+        <div class="section-title">
+            <span class="eyebrow">Divine Collection</span>
+            <h2>God Clothes</h2>
+            <p>Sacred attire for deities, crafted with pure devotion and heritage weaves.</p>
+            <div class="title-underline"></div>
+        </div>
+        <div class="shop-grid" id="god-clothes-grid">
+            <!-- Dynamic products will be loaded here -->
+        </div>
+        <div style="text-align: center; margin-top: 40px;">
+            <a href="god-clothes.html" class="btn">View Divine Collection</a>
+        </div>
+    </section>
+
+    <section class="section reveal" id="fancy-articles-highlights" style="background-color: #ffffff;">
+        <div class="section-title">
+            <span class="eyebrow">Lifestyle Collection</span>
+            <h2>Fancy Articles</h2>
+            <p>Elegant accessories and contemporary essentials that blend tradition with modern style.</p>
+            <div class="title-underline"></div>
+        </div>
+        <div class="shop-grid" id="fancy-articles-grid">
+            <!-- Dynamic products will be loaded here -->
+        </div>
+        <div style="text-align: center; margin-top: 40px;">
+            <a href="fancy-articles.html" class="btn">View Fancy Articles</a>
         </div>
     </section>
 
