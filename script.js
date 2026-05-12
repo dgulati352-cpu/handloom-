@@ -75,7 +75,9 @@ async function loadArticles() {
                     return `
                     <div class="product-card reveal active ${isOutOfStock ? 'out-of-stock' : ''}" data-id="${a.id}">
                         <div class="product-img" style="position: relative;">
-                            <img src="${a.image || 'assets/placeholder.png'}" alt="${a.name}" style="${isOutOfStock ? 'filter: grayscale(1); opacity: 0.7;' : ''}">
+                            <a href="product.html?id=${a.id}">
+                                <img src="${a.image || 'assets/placeholder.png'}" alt="${a.name}" style="${isOutOfStock ? 'filter: grayscale(1); opacity: 0.7;' : ''}">
+                            </a>
                             ${isOutOfStock ? 
                                 `<div class="out-of-stock-badge" style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: rgba(0,0,0,0.7); color: white; padding: 10px 20px; font-weight: 600; letter-spacing: 2px; font-size: 0.8rem; border-radius: 4px; pointer-events: none;">OUT OF STOCK</div>` 
                                 : `<div class="quick-add"><button><i class="fas fa-shopping-cart"></i> Quick Add</button></div>`
@@ -83,7 +85,7 @@ async function loadArticles() {
                         </div>
                         <div class="product-info">
                             <p class="category-label">${a.category}</p>
-                            <h3>${a.name}</h3>
+                            <h3><a href="product.html?id=${a.id}" style="color: inherit; text-decoration: none;">${a.name}</a></h3>
                             ${a.styleNo ? `<p class="style-no">STYLE NO. ${a.styleNo}</p>` : ''}
                             <div class="price">From ₹${a.price.toLocaleString('en-IN')}</div>
                             ${isOutOfStock ? 
@@ -99,7 +101,93 @@ async function loadArticles() {
                 `}).join('');
             };
 
-            if (categoryFilter) {
+            if (window.location.pathname.includes('product.html')) {
+                const urlParams = new URLSearchParams(window.location.search);
+                const productId = urlParams.get('id');
+                const product = articles.find(a => a.id === productId);
+                
+                const pdpContent = document.getElementById('pdp-content');
+                if (product && pdpContent) {
+                    const isOutOfStock = (product.stock !== undefined && product.stock <= 0);
+                    pdpContent.innerHTML = `
+                        <div class="pdp-layout" style="display: flex; gap: 60px; flex-wrap: wrap;">
+                            <div class="pdp-image" style="flex: 1; min-width: 300px;">
+                                <img src="${product.image || 'assets/placeholder.png'}" alt="${product.name}" style="width: 100%; border-radius: 8px; box-shadow: 0 10px 30px rgba(0,0,0,0.05); ${isOutOfStock ? 'filter: grayscale(1); opacity: 0.7;' : ''}">
+                            </div>
+                            <div class="pdp-details" style="flex: 1; min-width: 300px;">
+                                <h1 style="font-size: 2.5rem; margin-bottom: 10px; font-family: 'Cormorant Garamond', serif;">${product.name}</h1>
+                                ${product.styleNo ? `<p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 20px; letter-spacing: 1px;">STYLE NO. ${product.styleNo}</p>` : ''}
+                                <div style="font-size: 2rem; font-weight: 500; margin-bottom: 30px; font-family: 'Outfit', sans-serif;">From ₹${product.price.toLocaleString('en-IN')}</div>
+                                
+                                <div style="margin-bottom: 30px;">
+                                    <div style="font-weight: 600; margin-bottom: 10px;">Quantity</div>
+                                    <div class="quantity-selector" style="display: inline-flex; border-radius: 4px; overflow: hidden; border: 1px solid #ddd;">
+                                        <button class="pdp-qty-btn pdp-minus" style="padding: 10px 15px; background: transparent; border: none; cursor: pointer; font-size: 1.2rem;">-</button>
+                                        <input type="number" id="pdpQty" value="1" min="1" max="${product.stock || 10}" style="width: 50px; text-align: center; border: none; border-left: 1px solid #ddd; border-right: 1px solid #ddd; font-family: 'Outfit', sans-serif; font-size: 1rem;">
+                                        <button class="pdp-qty-btn pdp-plus" style="padding: 10px 15px; background: transparent; border: none; cursor: pointer; font-size: 1.2rem;">+</button>
+                                    </div>
+                                </div>
+
+                                <div style="display: flex; gap: 15px; margin-bottom: 40px; flex-wrap: wrap;">
+                                    <button id="pdpAddToCart" class="btn primary" style="flex: 2; min-width: 200px; padding: 15px; font-size: 1.1rem; border: none; cursor: pointer; border-radius: 4px; ${isOutOfStock ? 'background: #ccc; pointer-events: none;' : ''}">${isOutOfStock ? 'Out of Stock' : 'Add to Cart'}</button>
+                                    <a href="https://wa.me/919999999999?text=I'm interested in ${encodeURIComponent(product.name)}" target="_blank" class="btn" style="flex: 1; min-width: 150px; background: #25D366; color: white; border: none; padding: 15px; display: flex; align-items: center; justify-content: center; gap: 10px; text-decoration: none; border-radius: 4px;"><i class="fab fa-whatsapp" style="font-size: 1.2rem;"></i> Buy on WhatsApp</a>
+                                </div>
+
+                                <div style="border-top: 1px solid #eee; border-bottom: 1px solid #eee; display: flex; justify-content: space-around; padding: 20px 0; margin-bottom: 30px;">
+                                    <div style="text-align: center; color: var(--text-muted); font-size: 0.85rem;"><i class="fas fa-truck" style="display: block; font-size: 1.5rem; margin-bottom: 8px; color: var(--secondary);"></i> Free Shipping</div>
+                                    <div style="text-align: center; color: var(--text-muted); font-size: 0.85rem;"><i class="fas fa-undo" style="display: block; font-size: 1.5rem; margin-bottom: 8px; color: var(--secondary);"></i> Easy Returns</div>
+                                    <div style="text-align: center; color: var(--text-muted); font-size: 0.85rem;"><i class="fas fa-shield-alt" style="display: block; font-size: 1.5rem; margin-bottom: 8px; color: var(--secondary);"></i> Secure Payment</div>
+                                </div>
+
+                                <div class="pdp-tabs">
+                                    <div style="display: flex; border-bottom: 1px solid #eee; margin-bottom: 20px;">
+                                        <div style="padding: 10px 20px; font-weight: 600; border-bottom: 2px solid var(--primary); cursor: pointer; font-family: 'Outfit', sans-serif;">Description</div>
+                                        <div style="padding: 10px 20px; color: var(--text-muted); cursor: pointer; font-family: 'Outfit', sans-serif;">Care</div>
+                                        <div style="padding: 10px 20px; color: var(--text-muted); cursor: pointer; font-family: 'Outfit', sans-serif;">Shipping</div>
+                                    </div>
+                                    <div style="font-size: 0.95rem; line-height: 1.8; color: var(--text-dark);">
+                                        <p>${product.description || 'Premium quality hand-woven piece that speaks of timeless heritage and modern elegance. Comfort fit designed for everyday luxury.'}</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+
+                    const pdpAddToCartBtn = document.getElementById('pdpAddToCart');
+                    if (pdpAddToCartBtn && !isOutOfStock) {
+                        pdpAddToCartBtn.addEventListener('click', () => {
+                            const qty = parseInt(document.getElementById('pdpQty').value) || 1;
+                            const existingItemIndex = cart.findIndex(item => item.id === product.id);
+                            if (existingItemIndex > -1) {
+                                cart[existingItemIndex].quantity += qty;
+                            } else {
+                                cart.push({ id: product.id, name: product.name, price: parseInt(product.price), quantity: qty, img: product.image });
+                            }
+                            updateCartUI();
+                            document.getElementById('cartSidebar').classList.add('active');
+                            document.getElementById('cartOverlay').classList.add('active');
+                            document.body.style.overflow = 'hidden';
+                        });
+                    }
+                    
+                    const pdpMinus = document.querySelector('.pdp-minus');
+                    const pdpPlus = document.querySelector('.pdp-plus');
+                    const pdpInput = document.getElementById('pdpQty');
+                    if (pdpMinus && pdpPlus && pdpInput) {
+                        pdpMinus.addEventListener('click', () => {
+                            let val = parseInt(pdpInput.value) || 1;
+                            if (val > 1) pdpInput.value = val - 1;
+                        });
+                        pdpPlus.addEventListener('click', () => {
+                            let val = parseInt(pdpInput.value) || 1;
+                            const max = parseInt(pdpInput.getAttribute('max')) || 10;
+                            if (val < max) pdpInput.value = val + 1;
+                        });
+                    }
+                } else if (pdpContent) {
+                    pdpContent.innerHTML = `<div style="text-align: center; padding: 100px;"><h2>Product not found</h2><a href="index.html" class="btn primary" style="margin-top:20px; display: inline-block;">Return to Shop</a></div>`;
+                }
+            } else if (categoryFilter) {
                 renderTo(productGrid, articles);
                 renderTo(shopGrid, articles);
             } else {
