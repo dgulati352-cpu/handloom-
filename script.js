@@ -46,7 +46,8 @@ window.checkBackendStatus = checkBackendStatus; // Make globally accessible for 
 async function loadArticles() {
     const productGrid = document.querySelector('.product-grid');
     const shopGrid = document.querySelector('.shop-grid');
-    if (!productGrid && !shopGrid) return;
+    const pdpContent = document.getElementById('pdp-content');
+    if (!productGrid && !shopGrid && !pdpContent) return;
 
     // Check which category we need for specific pages
     let categoryFilter = null;
