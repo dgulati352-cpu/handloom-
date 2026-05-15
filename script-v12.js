@@ -501,8 +501,10 @@ if (window.location.pathname.includes('checkout.html')) {
                         }
                     }
                 };
-
-                const rzp1 = new Razorpay(options);
+                if (typeof window.Razorpay === 'undefined') {
+                    throw new Error('Razorpay SDK failed to load. Please check your network or disable adblockers and refresh the page.');
+                }
+                const rzp1 = new window.Razorpay(options);
                 rzp1.open();
 
             } catch (err) {
