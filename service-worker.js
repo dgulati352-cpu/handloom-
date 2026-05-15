@@ -1,4 +1,4 @@
-const CACHE_NAME = 'hridyang-cache-v12';
+const CACHE_NAME = 'hridyang-cache-v13';
 
 
 
@@ -17,7 +17,6 @@ const PRECACHE_URLS = [
 
 // ─── Install ─────────────────────────────────────────────────────────────────
 self.addEventListener('install', event => {
-  self.skipWaiting();
   event.waitUntil(
     caches.open(CACHE_NAME).then(cache => cache.addAll(PRECACHE_URLS))
   );
@@ -30,6 +29,13 @@ self.addEventListener('activate', event => {
       .then(keys => Promise.all(keys.map(k => caches.delete(k))))
       .then(() => self.clients.claim())
   );
+});
+
+// Handle manual update activation
+self.addEventListener('message', event => {
+  if (event.data && event.data.type === 'SKIP_WAITING') {
+    self.skipWaiting();
+  }
 });
 
 // ─── Fetch strategy ──────────────────────────────────────────────────────────

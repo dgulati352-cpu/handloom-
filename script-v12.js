@@ -566,12 +566,75 @@ if (window.location.pathname.includes('checkout.html')) {
 // ─── PWA Installation Logic ─────────────────────────────────────────────────
 console.log("PWA Logic Initializing...");
 
-// Register Service Worker
+// Register Service Worker & Handle Updates
 if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
-        navigator.serviceWorker.register('service-worker.js')
-            .then(() => console.log('ServiceWorker registered successfully'))
-            .catch(err => console.warn('ServiceWorker registration failed:', err));
+        navigator.serviceWorker.register('service-worker.js').then(reg => {
+            console.log('ServiceWorker registered successfully');
+
+            // 1. Check for update on load
+            if (reg.waiting) {
+                showUpdateBanner(reg);
+            }
+
+            // 2. Listen for new update
+            reg.onupdatefound = () => {
+                const newWorker = reg.installing;
+                newWorker.onstatechange = () => {
+                    if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                        showUpdateBanner(reg);
+                    }
+                };
+            };
+        }).catch(err => console.warn('ServiceWorker registration failed:', err));
+    });
+
+    // Handle reload when new worker takes over
+    let refreshing = false;
+    navigator.serviceWorker.addEventListener('controllerchange', () => {
+        if (refreshing) return;
+        refreshing = true;
+        window.location.reload();
+    });
+}
+
+function showUpdateBanner(reg) {
+    const bannerId = 'pwa-update-banner';
+    if (document.getElementById(bannerId)) return;
+
+    const banner = document.createElement('div');
+    banner.id = bannerId;
+    banner.style.cssText = `
+        position: fixed;
+        bottom: 25px;
+        left: 50%;
+        transform: translateX(-50%);
+        background: var(--accent);
+        color: #1A1A1A;
+        padding: 12px 25px;
+        border-radius: 50px;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+        z-index: 10000;
+        display: flex;
+        align-items: center;
+        gap: 20px;
+        font-weight: 700;
+        border: 2px solid white;
+        transition: 0.3s;
+    `;
+    banner.innerHTML = `
+        <span style="font-size: 0.9rem;"><i class="fas fa-sync-alt fa-spin"></i> New Update Available!</span>
+        <button id="updateNowBtn" style="background: white; border: none; padding: 6px 18px; border-radius: 25px; font-weight: 800; cursor: pointer; font-size: 0.8rem; text-transform: uppercase;">Update Now</button>
+    `;
+    document.body.appendChild(banner);
+
+    document.getElementById('updateNowBtn').addEventListener('click', () => {
+        if (reg.waiting) {
+            reg.waiting.postMessage({ type: 'SKIP_WAITING' });
+        } else {
+            // Fallback: if reg.waiting is gone, just reload
+            window.location.reload();
+        }
     });
 }
 
