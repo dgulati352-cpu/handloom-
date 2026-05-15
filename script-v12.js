@@ -298,46 +298,123 @@ window.removeFromCart = (idx) => {
     updateCartUI();
 };
 
-// Checkout Page Logic (Merged from v10)
+// Checkout Page Logic
 if (window.location.pathname.includes('checkout.html')) {
     const summaryContainer = document.getElementById('checkoutItemsContainer');
     const totalEl = document.getElementById('checkoutTotal');
     const subtotalEl = document.getElementById('checkoutSubtotal');
-    
+
     window.renderCheckoutSummary = () => {
         if (!summaryContainer) return;
+        if (cart.length === 0) {
+            summaryContainer.innerHTML = '<p style="text-align:center;color:var(--text-muted);padding:20px;">Your cart is empty.</p>';
+            if (subtotalEl) subtotalEl.innerText = '₹0';
+            if (totalEl) totalEl.innerText = '₹0';
+            return;
+        }
         let subtotal = 0;
         summaryContainer.innerHTML = cart.map(item => {
             subtotal += item.price * item.quantity;
             return `
-                <div style="display:flex; gap:15px; margin-bottom:20px;">
-                    <img src="${item.img}" style="width:60px; height:80px; object-fit:cover;">
+                <div style="display:flex; gap:15px; margin-bottom:20px; align-items:center;">
+                    <img src="${item.img}" style="width:60px; height:80px; object-fit:cover; border-radius:4px;">
                     <div style="flex:1;">
                         <div style="font-weight:600; font-size:0.9rem; text-transform:uppercase;">${item.name}</div>
-                        <div style="color:var(--text-muted); font-size:0.8rem;">Quantity: ${item.quantity}</div>
+                        <div style="color:var(--text-muted); font-size:0.8rem;">Qty: ${item.quantity}</div>
                     </div>
                     <div style="font-weight:600;">₹${(item.price * item.quantity).toLocaleString('en-IN')}</div>
                 </div>
             `;
         }).join('');
-        subtotalEl.innerText = '₹' + subtotal.toLocaleString('en-IN');
-        const discount = parseFloat(localStorage.getItem('vanyaDiscount')) || 0;
-        const discAmt = (subtotal * discount) / 100;
-        const grand = (subtotal - discAmt) + (siteSettings.shippingCost || 0);
-        totalEl.innerText = '₹' + grand.toLocaleString('en-IN');
+        if (subtotalEl) subtotalEl.innerText = '₹' + subtotal.toLocaleString('en-IN');
+        const shipping = siteSettings.shippingCost || 0;
+        const shippingEl = document.getElementById('checkoutShipping');
+        if (shippingEl) shippingEl.innerText = shipping === 0 ? 'Free' : '₹' + shipping.toLocaleString('en-IN');
+        const grand = subtotal + shipping;
+        if (totalEl) totalEl.innerText = '₹' + grand.toLocaleString('en-IN');
     };
     renderCheckoutSummary();
-    
-    // Add Razorpay and Place Order logic from v10 if needed...
-    // Preserving the Place Order button listener
+
+    // ── Place Order ──────────────────────────────────────────────────────────
     const placeBtn = document.getElementById('placeOrderBtn');
     if (placeBtn) {
         placeBtn.addEventListener('click', async () => {
-            // Validate and place order (similar to v10)
-            alert("Order placement logic is active. Please fill all fields.");
+            const firstName = document.getElementById('chkFirstName')?.value.trim();
+            const lastName  = document.getElementById('chkLastName')?.value.trim();
+            const email     = document.getElementById('chkEmail')?.value.trim();
+            const phone     = document.getElementById('chkPhone')?.value.trim();
+            const address   = document.getElementById('chkAddress')?.value.trim();
+            const city      = document.getElementById('chkCity')?.value.trim();
+            const pin       = document.getElementById('chkPin')?.value.trim();
+
+            if (!firstName || !phone || !address || !city || !pin) {
+                alert('Please fill in all required fields.');
+                return;
+            }
+            if (cart.length === 0) {
+                alert('Your cart is empty!');
+                return;
+            }
+
+            placeBtn.innerText = 'Placing Order...';
+            placeBtn.disabled = true;
+
+            try {
+                const subtotal = cart.reduce((sum, i) => sum + i.price * i.quantity, 0);
+                const shipping = siteSettings.shippingCost || 0;
+                const total = subtotal + shipping;
+
+                // Save order to Firestore
+                const { addDoc: _addDoc, collection: _col, serverTimestamp: _ts } =
+                    await import('./firebase-config.js');
+
+                const orderData = {
+                    firstName, lastName, email, phone,
+                    addressLine: address, city, pin,
+                    state: 'Uttar Pradesh',
+                    items: cart.map(i => ({ id: i.id, name: i.name, price: i.price, quantity: i.quantity, img: i.img })),
+                    subtotal, shipping, total,
+                    status: 'Pending',
+                    createdAt: serverTimestamp()
+                };
+
+                await addDoc(collection(db, 'orders'), orderData);
+
+                // Decrement stock for each item
+                for (const item of cart) {
+                    if (item.id) {
+                        try {
+                            await updateDoc(doc(db, 'articles', item.id), {
+                                stock: increment(-item.quantity)
+                            });
+                        } catch (e) { /* non-critical */ }
+                    }
+                }
+
+                // Clear cart
+                cart = [];
+                localStorage.removeItem('vanyaCart');
+
+                // Show success
+                document.querySelector('.checkout-container').innerHTML = `
+                    <div style="text-align:center; padding: 80px 40px; max-width: 600px; margin: 0 auto;">
+                        <div style="font-size: 4rem; margin-bottom: 20px;">🎉</div>
+                        <h2 style="font-family:'Playfair Display',serif; font-size:2.5rem; margin-bottom:15px;">Order Placed!</h2>
+                        <p style="color:var(--text-muted); margin-bottom:10px;">Thank you, <strong>${firstName}</strong>! Your order has been received.</p>
+                        <p style="color:var(--text-muted); margin-bottom:40px;">We'll contact you at <strong>${phone}</strong> to confirm delivery.</p>
+                        <a href="index.html" class="btn primary">Continue Shopping</a>
+                    </div>
+                `;
+            } catch (err) {
+                console.error(err);
+                alert('Failed to place order: ' + err.message);
+                placeBtn.innerText = 'Place Order';
+                placeBtn.disabled = false;
+            }
         });
     }
 }
+
 
 // ─── PWA Installation Logic ─────────────────────────────────────────────────
 console.log("PWA Logic Initializing...");
