@@ -370,11 +370,17 @@ if (window.location.pathname.includes('checkout.html')) {
             `;
         }).join('');
         if (subtotalEl) subtotalEl.innerText = '₹' + subtotal.toLocaleString('en-IN');
-        const shipping = siteSettings.shippingCost || 0;
+        
+        // Conditional Shipping: Free above 3000
+        const shippingThreshold = 3000;
+        const shipping = subtotal >= shippingThreshold ? 0 : (siteSettings.shippingCost || 0);
+        
         const shippingEl = document.getElementById('checkoutShipping');
         if (shippingEl) shippingEl.innerText = shipping === 0 ? 'Free' : '₹' + shipping.toLocaleString('en-IN');
+        
         const grand = subtotal + shipping;
         if (totalEl) totalEl.innerText = '₹' + grand.toLocaleString('en-IN');
+
     };
     renderCheckoutSummary();
 
@@ -404,8 +410,9 @@ if (window.location.pathname.includes('checkout.html')) {
 
             try {
                 const subtotal = cart.reduce((sum, i) => sum + i.price * i.quantity, 0);
-                const shipping = siteSettings.shippingCost || 0;
+                const shipping = subtotal >= 3000 ? 0 : (siteSettings.shippingCost || 0);
                 const total = subtotal + shipping;
+
 
                 // Save order to Firestore
                 const { addDoc: _addDoc, collection: _col, serverTimestamp: _ts } =
