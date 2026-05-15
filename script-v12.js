@@ -534,3 +534,25 @@ onSnapshot(doc(db, "settings", "main"), (s) => {
 checkBackendStatus();
 loadArticles();
 updateCartUI();
+
+// ─── Reveal Animation (IntersectionObserver) ────────────────────────────────
+// Without this, all .reveal sections stay invisible (opacity:0) forever
+function initReveal() {
+    const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+            if (entry.isIntersecting) {
+                entry.target.classList.add('active');
+                observer.unobserve(entry.target);
+            }
+        });
+    }, { threshold: 0.1 });
+
+    document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
+}
+
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initReveal);
+} else {
+    initReveal();
+}
+
