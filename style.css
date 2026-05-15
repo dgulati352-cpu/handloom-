@@ -680,3 +680,26 @@ nav {
     .nav-container { padding: 0 20px; }
     .cart-sidebar { width: 100%; }
 }
+
+/* --- PWA Install UI --- */
+.install-app-btn {
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), background-color 0.3s ease;
+}
+
+.install-app-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(30, 58, 138, 0.2);
+}
+
+.install-app-section {
+    animation: slideUpFade 0.8s ease-out forwards;
+}
+
+@keyframes slideUpFade {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+#pwaInstallModal {
+    backdrop-filter: blur(8px);
+}

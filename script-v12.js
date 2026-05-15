@@ -339,6 +339,185 @@ if (window.location.pathname.includes('checkout.html')) {
     }
 }
 
+// ─── PWA Installation Logic ─────────────────────────────────────────────────
+
+// Register Service Worker
+if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+        navigator.serviceWorker.register('/service-worker.js')
+            .then(() => console.log('ServiceWorker registered'))
+            .catch(err => console.warn('ServiceWorker failed:', err));
+    });
+}
+
+let deferredPrompt = null;
+let isInstalled = false;
+
+// Detect browser for manual instructions
+function getBrowserInstructions() {
+    const ua = navigator.userAgent;
+    const isIOS = /iphone|ipad|ipod/i.test(ua);
+    const isSafari = /safari/i.test(ua) && !/chrome/i.test(ua);
+    const isFirefox = /firefox/i.test(ua);
+    const isChrome = /chrome/i.test(ua) && !/edg/i.test(ua);
+    const isEdge = /edg/i.test(ua);
+
+    if (isIOS || isSafari) {
+        return {
+            title: 'Install on iPhone / iPad',
+            steps: [
+                '1. Tap the <strong>Share</strong> button <span style="font-size:1.1rem">⎋</span> at the bottom of Safari',
+                '2. Scroll down and tap <strong>"Add to Home Screen"</strong>',
+                '3. Tap <strong>"Add"</strong> in the top right corner'
+            ]
+        };
+    } else if (isFirefox) {
+        return {
+            title: 'Install in Firefox',
+            steps: [
+                '1. Click the <strong>three-dot menu (⋮)</strong> in the top right',
+                '2. Select <strong>"Install"</strong> or <strong>"Add to Home Screen"</strong>',
+                '3. Confirm the installation'
+            ]
+        };
+    } else if (isEdge) {
+        return {
+            title: 'Install in Microsoft Edge',
+            steps: [
+                '1. Click the <strong>three-dot menu (⋯)</strong> in the top right',
+                '2. Select <strong>"Apps" → "Install this site as an app"</strong>',
+                '3. Click <strong>"Install"</strong>'
+            ]
+        };
+    } else {
+        return {
+            title: 'Install in Chrome',
+            steps: [
+                '1. Look for the <strong>install icon (⊕)</strong> in the address bar on the right',
+                '2. Or click the <strong>three-dot menu (⋮)</strong> → <strong>"Save and share"</strong> → <strong>"Install page as app"</strong>',
+                '3. Click <strong>"Install"</strong> to confirm'
+            ]
+        };
+    }
+}
+
+// Create and show the install instructions modal
+function showInstallModal() {
+    const existing = document.getElementById('pwaInstallModal');
+    if (existing) { existing.style.display = 'flex'; return; }
+
+    const { title, steps } = getBrowserInstructions();
+    const modal = document.createElement('div');
+    modal.id = 'pwaInstallModal';
+    modal.style.cssText = `
+        position: fixed; inset: 0; background: rgba(0,0,0,0.55);
+        display: flex; align-items: center; justify-content: center;
+        z-index: 9999; backdrop-filter: blur(4px);
+        animation: pwaFadeIn 0.25s ease;
+    `;
+    modal.innerHTML = `
+        <style>
+            @keyframes pwaFadeIn { from { opacity:0; transform:scale(0.95); } to { opacity:1; transform:scale(1); } }
+        </style>
+        <div style="
+            background: white; border-radius: 20px; padding: 40px;
+            max-width: 440px; width: 90%; box-shadow: 0 25px 60px rgba(0,0,0,0.2);
+            position: relative; text-align: center;
+        ">
+            <div style="font-size: 2.5rem; margin-bottom: 15px;">📲</div>
+            <h3 style="font-family: 'Playfair Display', serif; font-size: 1.6rem; margin-bottom: 8px; color:#1A1A1A;">${title}</h3>
+            <p style="color:#6B7280; font-size: 0.9rem; margin-bottom: 25px;">Follow these steps to install the app on your device:</p>
+            <div style="text-align: left; background: #F8F5F2; border-radius: 12px; padding: 20px; margin-bottom: 25px;">
+                ${steps.map(s => `<p style="margin-bottom:12px; font-size:0.9rem; color:#1A1A1A; line-height:1.6;">${s}</p>`).join('')}
+            </div>
+            <button onclick="document.getElementById('pwaInstallModal').style.display='none'"
+                style="background:#1E3A8A; color:white; border:none; padding:12px 35px;
+                border-radius:8px; font-size:0.9rem; font-weight:600;
+                cursor:pointer; letter-spacing:1px; width:100%;">
+                Got it!
+            </button>
+        </div>
+    `;
+    document.body.appendChild(modal);
+    modal.addEventListener('click', (e) => {
+        if (e.target === modal) modal.style.display = 'none';
+    });
+}
+
+// Show install UI always (not just on beforeinstallprompt)
+function showInstallUI() {
+    document.querySelectorAll('.install-app-prompt').forEach(el => {
+        el.style.display = 'inline-flex';
+    });
+    document.querySelectorAll('.install-app-section').forEach(el => {
+        el.style.display = 'block';
+    });
+}
+
+// Check if already running as installed PWA
+function checkInstalledState() {
+    if (window.matchMedia('(display-mode: standalone)').matches ||
+        window.navigator.standalone === true) {
+        isInstalled = true;
+        // Hide all install UI — app is already installed
+        document.querySelectorAll('.install-app-prompt, .install-app-section').forEach(el => {
+            el.style.display = 'none';
+        });
+    } else {
+        // Not installed → always show the install option
+        showInstallUI();
+    }
+}
+
+// Capture the native install prompt when browser supports it
+window.addEventListener('beforeinstallprompt', (e) => {
+    e.preventDefault();
+    deferredPrompt = e;
+    // UI is already shown via checkInstalledState(); nothing extra needed
+});
+
+// Handle install button clicks
+document.addEventListener('click', async (e) => {
+    const btn = e.target.closest('.install-app-btn');
+    if (!btn) return;
+    e.preventDefault();
+
+    if (deferredPrompt) {
+        // Native prompt available — use it
+        deferredPrompt.prompt();
+        const { outcome } = await deferredPrompt.userChoice;
+        console.log('PWA install outcome:', outcome);
+        deferredPrompt = null;
+        if (outcome === 'accepted') {
+            document.querySelectorAll('.install-app-prompt, .install-app-section').forEach(el => {
+                el.style.display = 'none';
+            });
+        }
+    } else {
+        // No native prompt → show manual instructions
+        showInstallModal();
+    }
+});
+
+// Hide install UI once installed
+window.addEventListener('appinstalled', () => {
+    isInstalled = true;
+    deferredPrompt = null;
+    document.querySelectorAll('.install-app-prompt, .install-app-section').forEach(el => {
+        el.style.display = 'none';
+    });
+    const modal = document.getElementById('pwaInstallModal');
+    if (modal) modal.style.display = 'none';
+    console.log('PWA installed successfully');
+});
+
+// Run on page load — always show install UI unless already installed
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', checkInstalledState);
+} else {
+    checkInstalledState();
+}
+
 // Init
 onSnapshot(doc(db, "settings", "main"), (s) => {
     if (s.exists()) {

@@ -738,3 +738,125 @@ function initNotifications() {
         console.error('Notification listener error:', err);
     });
 }
+
+// ─── PWA Installation Logic ─────────────────────────────────────────────────
+
+let deferredPrompt = null;
+let isInstalled = false;
+
+// Detect browser for manual instructions
+function getBrowserInstructions() {
+    const ua = navigator.userAgent;
+    const isIOS = /iphone|ipad|ipod/i.test(ua);
+    const isSafari = /safari/i.test(ua) && !/chrome/i.test(ua);
+    const isFirefox = /firefox/i.test(ua);
+    const isChrome = /chrome/i.test(ua) && !/edg/i.test(ua);
+    const isEdge = /edg/i.test(ua);
+
+    if (isIOS || isSafari) {
+        return {
+            title: 'Install Dashboard on iOS',
+            steps: [
+                '1. Tap the <strong>Share</strong> button <span style="font-size:1.1rem">⎋</span>',
+                '2. Select <strong>"Add to Home Screen"</strong>',
+                '3. Tap <strong>"Add"</strong>'
+            ]
+        };
+    } else if (isFirefox) {
+        return {
+            title: 'Install Dashboard in Firefox',
+            steps: [
+                '1. Click the <strong>three-dot menu (⋮)</strong>',
+                '2. Select <strong>"Install"</strong>',
+                '3. Confirm installation'
+            ]
+        };
+    } else if (isEdge) {
+        return {
+            title: 'Install Dashboard in Edge',
+            steps: [
+                '1. Click the <strong>three-dot menu (⋯)</strong>',
+                '2. Select <strong>"Apps" → "Install site as app"</strong>',
+                '3. Click <strong>"Install"</strong>'
+            ]
+        };
+    } else {
+        return {
+            title: 'Install Dashboard in Chrome',
+            steps: [
+                '1. Look for the <strong>install icon (⊕)</strong> in the address bar',
+                '2. Or click the <strong>three-dot menu (⋮)</strong> → <strong>"Install"</strong>',
+                '3. Click <strong>"Install"</strong>'
+            ]
+        };
+    }
+}
+
+function showInstallModal() {
+    const existing = document.getElementById('pwaInstallModal');
+    if (existing) { existing.style.display = 'flex'; return; }
+
+    const { title, steps } = getBrowserInstructions();
+    const modal = document.createElement('div');
+    modal.id = 'pwaInstallModal';
+    modal.style.cssText = `
+        position: fixed; inset: 0; background: rgba(0,0,0,0.55);
+        display: flex; align-items: center; justify-content: center;
+        z-index: 9999; backdrop-filter: blur(8px);
+    `;
+    modal.innerHTML = `
+        <div style="background: white; border-radius: 20px; padding: 40px; max-width: 400px; width: 90%; text-align: center;">
+            <div style="font-size: 2.5rem; margin-bottom: 15px;">📊</div>
+            <h3 style="font-family: 'Outfit', sans-serif; font-size: 1.5rem; margin-bottom: 8px;">${title}</h3>
+            <p style="color:#666; font-size: 0.9rem; margin-bottom: 25px;">Install the Admin Dashboard for easier access.</p>
+            <div style="text-align: left; background: #f8f9fa; border-radius: 12px; padding: 20px; margin-bottom: 25px;">
+                ${steps.map(s => `<p style="margin-bottom:10px; font-size:0.9rem; color:#333;">${s}</p>`).join('')}
+            </div>
+            <button onclick="document.getElementById('pwaInstallModal').style.display='none'"
+                style="background:#1E3A8A; color:white; border:none; padding:12px; border-radius:8px; width:100%; font-weight:600; cursor:pointer;">
+                Got it
+            </button>
+        </div>
+    `;
+    document.body.appendChild(modal);
+    modal.addEventListener('click', (e) => { if (e.target === modal) modal.style.display = 'none'; });
+}
+
+function checkInstalledState() {
+    if (window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true) {
+        isInstalled = true;
+        document.querySelectorAll('.install-app-prompt').forEach(el => el.style.display = 'none');
+    } else {
+        document.querySelectorAll('.install-app-prompt').forEach(el => el.style.display = 'inline-flex');
+    }
+}
+
+window.addEventListener('beforeinstallprompt', (e) => {
+    e.preventDefault();
+    deferredPrompt = e;
+});
+
+document.addEventListener('click', async (e) => {
+    const btn = e.target.closest('.install-app-btn');
+    if (!btn) return;
+    e.preventDefault();
+
+    if (deferredPrompt) {
+        deferredPrompt.prompt();
+        const { outcome } = await deferredPrompt.userChoice;
+        deferredPrompt = null;
+        if (outcome === 'accepted') {
+            document.querySelectorAll('.install-app-prompt').forEach(el => el.style.display = 'none');
+        }
+    } else {
+        showInstallModal();
+    }
+});
+
+window.addEventListener('appinstalled', () => {
+    isInstalled = true;
+    deferredPrompt = null;
+    document.querySelectorAll('.install-app-prompt').forEach(el => el.style.display = 'none');
+});
+
+checkInstalledState();
