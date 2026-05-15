@@ -2,8 +2,8 @@
   "name": "Hridyang Collection",
   "short_name": "Hridyang",
   "description": "Premium handloom sarees and fabrics by Hridyang Collection. Shop authentic hand-woven heritage pieces.",
-  "start_url": "/index.html",
-  "scope": "/",
+  "start_url": "./index.html",
+  "scope": "./",
   "display": "standalone",
   "background_color": "#F8F5F2",
   "theme_color": "#1E3A8A",
@@ -27,19 +27,19 @@
     {
       "name": "Handloom",
       "short_name": "Handloom",
-      "url": "/handloom.html",
+      "url": "./handloom.html",
       "description": "Browse Handloom collection"
     },
     {
       "name": "God Clothes",
       "short_name": "God Clothes",
-      "url": "/god-clothes.html",
+      "url": "./god-clothes.html",
       "description": "Browse God Clothes collection"
     },
     {
       "name": "Fancy Articles",
       "short_name": "Fancy",
-      "url": "/fancy-articles.html",
+      "url": "./fancy-articles.html",
       "description": "Browse Fancy Articles collection"
     }
   ],

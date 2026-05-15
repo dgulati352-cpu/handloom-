@@ -740,9 +740,15 @@ function initNotifications() {
 }
 
 // ─── PWA Installation Logic ─────────────────────────────────────────────────
+console.log("Dashboard PWA Logic Initializing...");
 
 let deferredPrompt = null;
 let isInstalled = false;
+
+if (!window.isSecureContext) {
+    console.warn("PWA features require a Secure Context (HTTPS or localhost).");
+}
+
 
 // Detect browser for manual instructions
 function getBrowserInstructions() {

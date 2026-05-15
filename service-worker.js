@@ -2,18 +2,18 @@ const CACHE_NAME = 'hridyang-cache-v3';
 
 // Static assets to pre-cache at install time
 const PRECACHE_URLS = [
-  '/',
-  '/index.html',
-  '/handloom.html',
-  '/god-clothes.html',
-  '/fancy-articles.html',
-  '/checkout.html',
-  '/product.html',
-  '/style.css',
-  '/script-v12.js',
-  '/firebase-config.js',
-  '/constants.js',
-  '/manifest.json',
+  './',
+  './index.html',
+  './handloom.html',
+  './god-clothes.html',
+  './fancy-articles.html',
+  './checkout.html',
+  './product.html',
+  './style.css',
+  './script-v12.js',
+  './firebase-config.js',
+  './constants.js',
+  './manifest.json',
   'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css',
   'https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;1,400&family=Inter:wght@300;400;500;600;700&display=swap'
 ];
@@ -26,16 +26,16 @@ self.addEventListener('install', event => {
       // addAll fails silently for non-critical cross-origin assets, so
       // split into two groups: critical (must succeed) and optional.
       const criticalUrls = [
-        '/',
-        '/index.html',
-        '/handloom.html',
-        '/god-clothes.html',
-        '/fancy-articles.html',
-        '/style.css',
-        '/script-v12.js',
-        '/firebase-config.js',
-        '/constants.js',
-        '/manifest.json',
+        './',
+        './index.html',
+        './handloom.html',
+        './god-clothes.html',
+        './fancy-articles.html',
+        './style.css',
+        './script-v12.js',
+        './firebase-config.js',
+        './constants.js',
+        './manifest.json',
       ];
       return cache.addAll(criticalUrls);
     })
@@ -92,7 +92,7 @@ self.addEventListener('fetch', event => {
       }).catch(() => {
         // Offline fallback: return the homepage for navigation requests
         if (request.mode === 'navigate') {
-          return caches.match('/index.html');
+          return caches.match('./index.html');
         }
       });
     })

@@ -340,15 +340,21 @@ if (window.location.pathname.includes('checkout.html')) {
 }
 
 // ─── PWA Installation Logic ─────────────────────────────────────────────────
+console.log("PWA Logic Initializing...");
 
 // Register Service Worker
 if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
-        navigator.serviceWorker.register('/service-worker.js')
-            .then(() => console.log('ServiceWorker registered'))
-            .catch(err => console.warn('ServiceWorker failed:', err));
+        navigator.serviceWorker.register('service-worker.js')
+            .then(() => console.log('ServiceWorker registered successfully'))
+            .catch(err => console.warn('ServiceWorker registration failed:', err));
     });
 }
+
+if (!window.isSecureContext) {
+    console.warn("PWA features require a Secure Context (HTTPS or localhost).");
+}
+
 
 let deferredPrompt = null;
 let isInstalled = false;
