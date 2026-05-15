@@ -1,4 +1,5 @@
-const CACHE_NAME = 'hridyang-cache-v6';
+const CACHE_NAME = 'hridyang-cache-v7';
+
 
 
 // Only cache static assets — NOT JS files (so updates always load fresh)

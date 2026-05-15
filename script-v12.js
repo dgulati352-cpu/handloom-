@@ -3,6 +3,26 @@ import { API_BASE_URL, RAZORPAY_KEY, DEFAULT_SETTINGS } from './constants.js';
 
 let siteSettings = { ...DEFAULT_SETTINGS };
 
+// ─── Reveal Animation (IntersectionObserver) ────────────────────────────────
+// Placed at the top to ensure sections reveal even if Firebase fails offline
+function initReveal() {
+    const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+            if (entry.isIntersecting) {
+                entry.target.classList.add('active');
+                observer.unobserve(entry.target);
+            }
+        });
+    }, { threshold: 0.1 });
+
+    document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
+}
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initReveal);
+} else {
+    initReveal();
+}
+
 async function checkBackendStatus() {
     const warningId = 'backend-offline-warning';
     const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
@@ -742,23 +762,4 @@ loadArticles();
 updateCartUI();
 
 // ─── Reveal Animation (IntersectionObserver) ────────────────────────────────
-// Without this, all .reveal sections stay invisible (opacity:0) forever
-function initReveal() {
-    const observer = new IntersectionObserver((entries) => {
-        entries.forEach(entry => {
-            if (entry.isIntersecting) {
-                entry.target.classList.add('active');
-                observer.unobserve(entry.target);
-            }
-        });
-    }, { threshold: 0.1 });
-
-    document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
-}
-
-if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', initReveal);
-} else {
-    initReveal();
-}
-
+// initReveal moved to top
