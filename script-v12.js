@@ -413,6 +413,21 @@ if (window.location.pathname.includes('checkout.html')) {
             placeBtn.disabled = true;
 
             try {
+                // Dynamically load Razorpay to bypass Service Worker caching issues
+                const loadRazorpay = () => new Promise(resolve => {
+                    if (window.Razorpay) return resolve(true);
+                    const script = document.createElement('script');
+                    script.src = 'https://checkout.razorpay.com/v1/checkout.js';
+                    script.onload = () => resolve(true);
+                    script.onerror = () => resolve(false);
+                    document.body.appendChild(script);
+                });
+
+                const isRzpLoaded = await loadRazorpay();
+                if (!isRzpLoaded || typeof window.Razorpay === 'undefined') {
+                    throw new Error('Razorpay SDK failed to load. Please check your network or disable adblockers.');
+                }
+
                 const subtotal = cart.reduce((sum, i) => sum + i.price * i.quantity, 0);
                 const shipping = subtotal >= 3000 ? 0 : (siteSettings.shippingCost || 0);
                 const total = subtotal + shipping;
@@ -501,9 +516,6 @@ if (window.location.pathname.includes('checkout.html')) {
                         }
                     }
                 };
-                if (typeof window.Razorpay === 'undefined') {
-                    throw new Error('Razorpay SDK failed to load. Please check your network or disable adblockers and refresh the page.');
-                }
                 const rzp1 = new window.Razorpay(options);
                 rzp1.open();
 
