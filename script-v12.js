@@ -359,17 +359,18 @@ if (window.location.pathname.includes('checkout.html')) {
         summaryContainer.innerHTML = cart.map(item => {
             subtotal += item.price * item.quantity;
             return `
-                <div style="display:flex; gap:15px; margin-bottom:20px; align-items:center;">
-                    <img src="${item.img}" style="width:60px; height:80px; object-fit:cover; border-radius:4px;">
-                    <div style="flex:1;">
-                        <div style="font-weight:600; font-size:0.9rem; text-transform:uppercase;">${item.name}</div>
-                        <div style="color:var(--text-muted); font-size:0.8rem;">Qty: ${item.quantity}</div>
+                <div class="summary-item">
+                    <img src="${item.img}">
+                    <div class="summary-item-details">
+                        <div class="summary-item-name">${item.name}</div>
+                        <div class="summary-item-meta">Qty: ${item.quantity}</div>
                     </div>
-                    <div style="font-weight:600;">₹${(item.price * item.quantity).toLocaleString('en-IN')}</div>
+                    <div class="summary-item-price">₹${(item.price * item.quantity).toLocaleString('en-IN')}</div>
                 </div>
             `;
         }).join('');
         if (subtotalEl) subtotalEl.innerText = '₹' + subtotal.toLocaleString('en-IN');
+
         
         // Conditional Shipping: Free above 3000
         const shippingThreshold = 3000;
