@@ -253,7 +253,7 @@ nav {
 
 .btn.primary {
     background: var(--text-dark);
-    color: white;
+    color: var(--bg-light);
 }
 
 .btn.primary:hover {
@@ -390,7 +390,7 @@ nav {
     aspect-ratio: 4/5;
     overflow: hidden;
     margin-bottom: 20px;
-    background: #F5F5F5;
+    background: var(--bg-surface);
 }
 
 .product-img img {
@@ -420,7 +420,7 @@ nav {
 .quick-add button {
     width: 100%;
     background: var(--text-dark);
-    color: white;
+    color: var(--bg-light);
     border: none;
     padding: 15px;
     font-size: 0.75rem;
@@ -660,7 +660,7 @@ nav {
 
 /* --- Checkout Redesign (Melini Style) --- */
 .checkout-page {
-    background: #fbfbfb;
+    background: var(--bg-surface);
 }
 
 .checkout-container {
@@ -679,8 +679,8 @@ nav {
 }
 
 .checkout-step {
-    background: white;
-    border: 1px solid #eee;
+    background: var(--bg-white);
+    border: 1px solid var(--border);
     border-radius: 12px;
     padding: 30px;
     box-shadow: 0 2px 10px rgba(0,0,0,0.02);
@@ -734,25 +734,25 @@ nav {
 
 .form-group label {
     font-size: 0.85rem;
-    color: #444;
+    color: var(--text-dark);
     font-weight: 500;
 }
 
 .checkout-input {
     width: 100%;
     padding: 12px 15px;
-    border: 1px solid #ddd;
+    border: 1px solid var(--border);
     border-radius: 6px;
     font-family: 'Inter', sans-serif;
     font-size: 0.95rem;
     transition: border-color 0.3s;
-    background: #fafafa;
+    background: var(--bg-surface);
 }
 
 .checkout-input:focus {
     outline: none;
     border-color: var(--primary);
-    background: white;
+    background: var(--bg-white);
 }
 
 /* Shipping Method Selection */
@@ -761,9 +761,9 @@ nav {
     justify-content: space-between;
     align-items: center;
     padding: 20px;
-    border: 1px solid #eee;
+    border: 1px solid var(--border);
     border-radius: 8px;
-    background: #fafafa;
+    background: var(--bg-surface);
 }
 
 .method-info {
@@ -780,14 +780,14 @@ nav {
 
 .method-text span {
     font-size: 0.8rem;
-    color: #666;
+    color: var(--text-muted);
 }
 
 /* Payment Method Selection */
 .payment-card {
     padding: 20px;
     border: 1px solid var(--primary);
-    background: #fffafa;
+    background: var(--bg-surface);
     border-radius: 8px;
     display: flex;
     align-items: center;
@@ -796,15 +796,15 @@ nav {
 
 .payment-card i {
     font-size: 1.5rem;
-    color: #555;
+    color: var(--text-dark);
 }
 
 /* Order Summary Card */
 .order-summary-card {
     position: sticky;
     top: 120px;
-    background: white;
-    border: 1px solid #eee;
+    background: var(--bg-white);
+    border: 1px solid var(--border);
     border-radius: 12px;
     padding: 30px;
     box-shadow: 0 4px 20px rgba(0,0,0,0.05);
@@ -820,22 +820,22 @@ nav {
     gap: 10px;
     margin: 20px 0;
     padding: 20px 0;
-    border-top: 1px solid #eee;
-    border-bottom: 1px solid #eee;
+    border-top: 1px solid var(--border);
+    border-bottom: 1px solid var(--border);
 }
 
 .coupon-input {
     flex: 1;
     padding: 10px 15px;
-    border: 1px solid #ddd;
+    border: 1px solid var(--border);
     border-radius: 6px;
     font-size: 0.9rem;
 }
 
 .coupon-btn {
     padding: 10px 20px;
-    background: #f5f5f5;
-    border: 1px solid #ddd;
+    background: var(--bg-surface);
+    border: 1px solid var(--border);
     border-radius: 6px;
     cursor: pointer;
     font-size: 0.85rem;
@@ -847,13 +847,13 @@ nav {
     justify-content: space-between;
     margin-bottom: 15px;
     font-size: 0.95rem;
-    color: #555;
+    color: var(--text-dark);
 }
 
 .summary-row.total {
     margin-top: 20px;
     padding-top: 20px;
-    border-top: 1px solid #eee;
+    border-top: 1px solid var(--border);
     font-weight: 700;
     font-size: 1.3rem;
     color: var(--text-dark);
