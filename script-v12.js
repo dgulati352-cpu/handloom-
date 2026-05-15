@@ -376,7 +376,9 @@ if (window.location.pathname.includes('checkout.html')) {
         const shipping = subtotal >= shippingThreshold ? 0 : (siteSettings.shippingCost || 0);
         
         const shippingEl = document.getElementById('checkoutShipping');
+        const shippingLabel = document.getElementById('summaryShippingLabel');
         if (shippingEl) shippingEl.innerText = shipping === 0 ? 'Free' : '₹' + shipping.toLocaleString('en-IN');
+        if (shippingLabel) shippingLabel.innerText = shipping === 0 ? 'Free' : '₹' + shipping.toLocaleString('en-IN');
         
         const grand = subtotal + shipping;
         if (totalEl) totalEl.innerText = '₹' + grand.toLocaleString('en-IN');
@@ -394,6 +396,7 @@ if (window.location.pathname.includes('checkout.html')) {
             const phone     = document.getElementById('chkPhone')?.value.trim();
             const address   = document.getElementById('chkAddress')?.value.trim();
             const city      = document.getElementById('chkCity')?.value.trim();
+            const state     = document.getElementById('chkState')?.value.trim() || 'Uttar Pradesh';
             const pin       = document.getElementById('chkPin')?.value.trim();
 
             if (!firstName || !phone || !address || !city || !pin) {
@@ -420,13 +423,13 @@ if (window.location.pathname.includes('checkout.html')) {
 
                 const orderData = {
                     firstName, lastName, email, phone,
-                    addressLine: address, city, pin,
-                    state: 'Uttar Pradesh',
+                    addressLine: address, city, pin, state,
                     items: cart.map(i => ({ id: i.id, name: i.name, price: i.price, quantity: i.quantity, img: i.img })),
                     subtotal, shipping, total,
                     status: 'Pending',
                     createdAt: serverTimestamp()
                 };
+
 
                 await addDoc(collection(db, 'orders'), orderData);
 
