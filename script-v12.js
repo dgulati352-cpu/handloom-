@@ -409,7 +409,7 @@ if (window.location.pathname.includes('checkout.html')) {
                 return;
             }
 
-            placeBtn.innerText = 'Placing Order...';
+            placeBtn.innerText = 'Initializing Payment...';
             placeBtn.disabled = true;
 
             try {
@@ -417,54 +417,101 @@ if (window.location.pathname.includes('checkout.html')) {
                 const shipping = subtotal >= 3000 ? 0 : (siteSettings.shippingCost || 0);
                 const total = subtotal + shipping;
 
+                // 1. Create Razorpay Order via Backend
+                const orderRes = await fetch(`${API_BASE_URL}/api/create-order`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ amount: total })
+                });
+                
+                if (!orderRes.ok) throw new Error('Failed to initialize payment server.');
+                const rzpOrder = await orderRes.json();
 
-                // Save order to Firestore
-                const { addDoc: _addDoc, collection: _col, serverTimestamp: _ts } =
-                    await import('./firebase-config.js');
+                // 2. Open Razorpay Modal
+                const options = {
+                    key: RAZORPAY_KEY,
+                    amount: rzpOrder.amount,
+                    currency: rzpOrder.currency,
+                    name: "Hridyang Collection",
+                    description: "Handloom Heritage Purchase",
+                    order_id: rzpOrder.order_id,
+                    handler: async function (response) {
+                        placeBtn.innerText = 'Verifying Payment...';
+                        
+                        // 3. Verify Payment
+                        const verifyRes = await fetch(`${API_BASE_URL}/api/verify-payment`, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                                razorpay_order_id: response.razorpay_order_id,
+                                razorpay_payment_id: response.razorpay_payment_id,
+                                razorpay_signature: response.razorpay_signature
+                            })
+                        });
 
-                const orderData = {
-                    firstName, lastName, email, phone,
-                    addressLine: address, city, pin, state,
-                    items: cart.map(i => ({ id: i.id, name: i.name, price: i.price, quantity: i.quantity, img: i.img })),
-                    subtotal, shipping, total,
-                    status: 'Pending',
-                    createdAt: serverTimestamp()
+                        const verifyData = await verifyRes.json();
+                        if (!verifyData.verified) throw new Error('Payment verification failed.');
+
+                        // 4. Save Order to Firestore
+                        const { addDoc: _addDoc, collection: _col, serverTimestamp: _ts } =
+                            await import('./firebase-config.js');
+
+                        const orderData = {
+                            firstName, lastName, email, phone,
+                            addressLine: address, city, pin, state,
+                            items: cart.map(i => ({ id: i.id, name: i.name, price: i.price, quantity: i.quantity, img: i.img })),
+                            subtotal, shipping, total,
+                            razorpay_payment_id: response.razorpay_payment_id,
+                            status: 'Pending',
+                            createdAt: serverTimestamp()
+                        };
+
+                        await addDoc(collection(db, 'orders'), orderData);
+
+                        // Decrement stock
+                        for (const item of cart) {
+                            if (item.id) {
+                                try {
+                                    await updateDoc(doc(db, 'articles', item.id), {
+                                        stock: increment(-item.quantity)
+                                    });
+                                } catch (e) { }
+                            }
+                        }
+
+                        cart = [];
+                        localStorage.removeItem('vanyaCart');
+
+                        document.querySelector('.checkout-container').innerHTML = `
+                            <div style="text-align:center; padding: 80px 40px; max-width: 600px; margin: 0 auto;">
+                                <div style="font-size: 4rem; margin-bottom: 20px;">🎉</div>
+                                <h2 style="font-family:'Playfair Display',serif; font-size:2.5rem; margin-bottom:15px;">Order Placed!</h2>
+                                <p style="color:var(--text-muted); margin-bottom:10px;">Thank you, <strong>${firstName}</strong>! Your order has been received.</p>
+                                <p style="color:var(--text-muted); margin-bottom:40px;">Payment ID: ${response.razorpay_payment_id}</p>
+                                <a href="index.html" class="btn primary">Continue Shopping</a>
+                            </div>
+                        `;
+                    },
+                    prefill: { name: `${firstName} ${lastName}`, email, contact: phone },
+                    theme: { color: "#A34E4E" },
+                    modal: {
+                        ondismiss: function() {
+                            placeBtn.innerText = 'Place Order';
+                            placeBtn.disabled = false;
+                        }
+                    }
                 };
 
+                const rzp1 = new Razorpay(options);
+                rzp1.open();
 
-                await addDoc(collection(db, 'orders'), orderData);
-
-                // Decrement stock for each item
-                for (const item of cart) {
-                    if (item.id) {
-                        try {
-                            await updateDoc(doc(db, 'articles', item.id), {
-                                stock: increment(-item.quantity)
-                            });
-                        } catch (e) { /* non-critical */ }
-                    }
-                }
-
-                // Clear cart
-                cart = [];
-                localStorage.removeItem('vanyaCart');
-
-                // Show success
-                document.querySelector('.checkout-container').innerHTML = `
-                    <div style="text-align:center; padding: 80px 40px; max-width: 600px; margin: 0 auto;">
-                        <div style="font-size: 4rem; margin-bottom: 20px;">🎉</div>
-                        <h2 style="font-family:'Playfair Display',serif; font-size:2.5rem; margin-bottom:15px;">Order Placed!</h2>
-                        <p style="color:var(--text-muted); margin-bottom:10px;">Thank you, <strong>${firstName}</strong>! Your order has been received.</p>
-                        <p style="color:var(--text-muted); margin-bottom:40px;">We'll contact you at <strong>${phone}</strong> to confirm delivery.</p>
-                        <a href="index.html" class="btn primary">Continue Shopping</a>
-                    </div>
-                `;
             } catch (err) {
                 console.error(err);
-                alert('Failed to place order: ' + err.message);
+                alert('Checkout Error: ' + err.message);
                 placeBtn.innerText = 'Place Order';
                 placeBtn.disabled = false;
             }
+
         });
     }
 }
