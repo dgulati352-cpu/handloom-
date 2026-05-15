@@ -3,7 +3,7 @@
 :root {
     --primary: #A34E4E;       /* Muted Terracotta */
     --secondary: #8B4513;     /* Saddle Brown */
-    --accent: #FB8500;        /* Vibrant Saffron/Marigold */
+    --accent: #FF385C;        /* Vibrant Rose Pink */
     --bg-light: #FDFCFB;      /* Warm Cream/Beige */
     --bg-white: #FFFFFF;
     --bg-surface: #F8F5F2;    /* Slightly darker/warmer surface */
@@ -20,7 +20,7 @@
     :root {
         --primary: #C96666;
         --secondary: #B86733;
-        --accent: #FFB703;        /* Slightly lighter Saffron for dark mode */
+        --accent: #FF5277;        /* Slightly lighter Rose for dark mode */
         --bg-light: #121212;
         --bg-white: #1E1E1E;
         --bg-surface: #252525;
@@ -57,7 +57,7 @@ h1, h2, h3, .logo {
 /* --- Announcement Bar --- */
 .announcement-bar {
     background: var(--accent);
-    color: #1A1A1A;
+    color: white;
     padding: 10px 0;
     font-size: 0.75rem;
     letter-spacing: 2px;
@@ -173,7 +173,7 @@ nav {
     top: -8px;
     right: -10px;
     background: var(--accent);
-    color: #1A1A1A;
+    color: white;
     font-size: 0.65rem;
     width: 18px;
     height: 18px;
@@ -258,7 +258,7 @@ nav {
 
 .btn.primary:hover {
     background: var(--accent);
-    color: #1A1A1A;
+    color: white;
 }
 
 .btn.secondary {
@@ -433,7 +433,7 @@ nav {
 
 .quick-add button:hover {
     background: var(--accent);
-    color: #1A1A1A;
+    color: white;
 }
 
 .product-info {
