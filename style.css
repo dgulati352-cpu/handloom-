@@ -5,6 +5,7 @@
     --secondary: #8B4513;     /* Saddle Brown */
     --bg-light: #FDFCFB;      /* Warm Cream/Beige */
     --bg-white: #FFFFFF;
+    --bg-surface: #F8F5F2;    /* Slightly darker/warmer surface */
     --text-dark: #1A1A1A;     /* Soft Black */
     --text-muted: #6B7280;    /* Cool Gray */
     --border: #E5E7EB;        /* Light Border */
@@ -13,6 +14,22 @@
     --transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
     --radius: 8px;
 }
+
+@media (prefers-color-scheme: dark) {
+    :root {
+        --primary: #C96666;
+        --secondary: #B86733;
+        --bg-light: #121212;
+        --bg-white: #1E1E1E;
+        --bg-surface: #252525;
+        --text-dark: #F3F4F6;
+        --text-muted: #9CA3AF;
+        --border: #374151;
+        --glass: rgba(30, 30, 30, 0.9);
+        --shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+    }
+}
+
 
 * {
     margin: 0;
@@ -170,7 +187,7 @@ nav {
     height: 90vh;
     display: flex;
     align-items: center;
-    background: #F8F5F2;
+    background: var(--bg-surface);
     overflow: hidden;
     margin-bottom: 80px;
 }

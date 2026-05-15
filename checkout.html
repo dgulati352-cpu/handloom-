@@ -15,50 +15,53 @@
     <style>
 
         /* Specific overrides for screenshot-perfect match */
-        .checkout-page { background-color: #fff; }
+        .checkout-page { background-color: var(--bg-white); }
         .checkout-container { gap: 60px; margin-top: 20px; }
         
         .checkout-step { 
-            border: 1px solid #e0e0e0; 
+            border: 1px solid var(--border); 
             border-radius: 8px; 
-            background: #fff;
+            background: var(--bg-white);
             padding: 25px;
             margin-bottom: 25px;
             box-shadow: none;
         }
 
         .step-number { 
-            background: #A34E4E; 
+            background: var(--primary); 
             width: 22px; height: 22px; 
             font-size: 0.7rem;
+            color: #fff;
         }
 
-        .step-header h3 { font-size: 0.95rem; color: #1a1a1a; font-weight: 700; }
+        .step-header h3 { font-size: 0.95rem; color: var(--text-dark); font-weight: 700; }
 
         .checkout-input {
-            background: #fff;
-            border: 1px solid #dcdcdc;
+            background: var(--bg-white);
+            border: 1px solid var(--border);
             padding: 10px 15px;
             border-radius: 4px;
             font-size: 0.9rem;
+            color: var(--text-dark);
         }
 
-        .checkout-input::placeholder { color: #aaa; }
+        .checkout-input::placeholder { color: var(--text-muted); }
 
-        .form-label { font-size: 0.85rem; color: #333; font-weight: 500; margin-bottom: 6px; display: block; }
+        .form-label { font-size: 0.85rem; color: var(--text-dark); font-weight: 500; margin-bottom: 6px; display: block; }
 
         .method-card {
-            border: 1px solid #e0e0e0;
-            background: #fff;
+            border: 1px solid var(--border);
+            background: var(--bg-white);
             padding: 20px;
             display: flex;
             justify-content: space-between;
             align-items: center;
+            color: var(--text-dark);
         }
 
         .method-radio {
             width: 18px; height: 18px;
-            border: 2px solid #A34E4E;
+            border: 2px solid var(--primary);
             border-radius: 50%;
             position: relative;
             display: flex;
@@ -68,36 +71,38 @@
         .method-radio::after {
             content: '';
             width: 10px; height: 10px;
-            background: #A34E4E;
+            background: var(--primary);
             border-radius: 50%;
         }
 
         .payment-card {
-            border: 1px dotted #ccc;
-            background: #fafafa;
+            border: 1px dotted var(--border);
+            background: var(--bg-surface);
             padding: 20px;
+            color: var(--text-dark);
         }
 
         /* Summary Fixes */
         .order-summary-card {
-            border: 1px solid #eee;
+            border: 1px solid var(--border);
             border-radius: 12px;
             padding: 25px;
+            background: var(--bg-white);
         }
 
-        .order-summary-card h3 { font-size: 1.1rem; font-family: 'Playfair Display', serif; }
+        .order-summary-card h3 { font-size: 1.1rem; font-family: 'Playfair Display', serif; color: var(--text-dark); }
 
         .summary-item {
             display: flex; gap: 15px; margin-bottom: 20px; align-items: flex-start;
         }
         .summary-item img { width: 50px; height: 65px; border-radius: 4px; }
-        .summary-item-name { font-weight: 600; font-size: 0.8rem; text-transform: uppercase; margin-bottom: 2px; }
-        .summary-item-meta { font-size: 0.75rem; color: #888; }
-        .summary-item-price { font-weight: 600; font-size: 0.85rem; margin-left: auto; }
+        .summary-item-name { font-weight: 600; font-size: 0.8rem; text-transform: uppercase; margin-bottom: 2px; color: var(--text-dark); }
+        .summary-item-meta { font-size: 0.75rem; color: var(--text-muted); }
+        .summary-item-price { font-weight: 600; font-size: 0.85rem; margin-left: auto; color: var(--text-dark); }
 
         .coupon-box { border: none; padding: 15px 0; gap: 12px; }
-        .coupon-input { background: #fff; border: 1px solid #ddd; }
-        .coupon-btn { background: #f0f0f0; color: #555; }
+        .coupon-input { background: var(--bg-white); border: 1px solid var(--border); color: var(--text-dark); }
+        .coupon-btn { background: var(--bg-surface); color: var(--text-dark); }
 
         .summary-row span:first-child { color: #666; font-size: 0.9rem; }
         .summary-row span:last-child { font-weight: 600; }

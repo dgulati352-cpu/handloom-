@@ -650,18 +650,18 @@ function showInstallModal() {
             @keyframes pwaFadeIn { from { opacity:0; transform:scale(0.95); } to { opacity:1; transform:scale(1); } }
         </style>
         <div style="
-            background: white; border-radius: 20px; padding: 40px;
-            max-width: 440px; width: 90%; box-shadow: 0 25px 60px rgba(0,0,0,0.2);
+            background: var(--bg-white); border-radius: 20px; padding: 40px;
+            max-width: 440px; width: 90%; box-shadow: var(--shadow);
             position: relative; text-align: center;
         ">
             <div style="font-size: 2.5rem; margin-bottom: 15px;">📲</div>
-            <h3 style="font-family: 'Playfair Display', serif; font-size: 1.6rem; margin-bottom: 8px; color:#1A1A1A;">${title}</h3>
-            <p style="color:#6B7280; font-size: 0.9rem; margin-bottom: 25px;">Follow these steps to install the app on your device:</p>
-            <div style="text-align: left; background: #F8F5F2; border-radius: 12px; padding: 20px; margin-bottom: 25px;">
-                ${steps.map(s => `<p style="margin-bottom:12px; font-size:0.9rem; color:#1A1A1A; line-height:1.6;">${s}</p>`).join('')}
+            <h3 style="font-family: 'Playfair Display', serif; font-size: 1.6rem; margin-bottom: 8px; color:var(--text-dark);">${title}</h3>
+            <p style="color:var(--text-muted); font-size: 0.9rem; margin-bottom: 25px;">Follow these steps to install the app on your device:</p>
+            <div style="text-align: left; background: var(--bg-surface); border-radius: 12px; padding: 20px; margin-bottom: 25px;">
+                ${steps.map(s => `<p style="margin-bottom:12px; font-size:0.9rem; color:var(--text-dark); line-height:1.6;">${s}</p>`).join('')}
             </div>
             <button onclick="document.getElementById('pwaInstallModal').style.display='none'"
-                style="background:#1E3A8A; color:white; border:none; padding:12px 35px;
+                style="background:var(--primary); color:#ffffff; border:none; padding:12px 35px;
                 border-radius:8px; font-size:0.9rem; font-weight:600;
                 cursor:pointer; letter-spacing:1px; width:100%;">
                 Got it!
