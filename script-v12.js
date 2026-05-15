@@ -648,9 +648,23 @@ if (document.readyState === 'loading') {
 onSnapshot(doc(db, "settings", "main"), (s) => {
     if (s.exists()) {
         siteSettings = { ...siteSettings, ...s.data() };
-        // apply settings logic
+        
+        // 1. Update Announcement Bar
+        const announceEls = document.querySelectorAll('.announcement-track span');
+        if (announceEls.length > 0) {
+            announceEls.forEach(el => el.innerText = siteSettings.announcementText);
+        }
+
+        // 2. Update Checkout if on checkout page
+        if (window.location.pathname.includes('checkout.html')) {
+            if (typeof renderCheckoutSummary === 'function') renderCheckoutSummary();
+        }
+
+        // 3. Update Cart Badge/Total
+        updateCartUI();
     }
 });
+
 checkBackendStatus();
 loadArticles();
 updateCartUI();
