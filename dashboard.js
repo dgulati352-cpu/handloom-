@@ -1,13 +1,13 @@
-import { db, storage, ref, uploadBytes, getDownloadURL, collection, getDocs, addDoc, query, orderBy, serverTimestamp, doc, getDoc, setDoc, updateDoc, increment, deleteDoc } from './firebase-config.js';
+import { db, storage, ref, uploadBytes, getDownloadURL, collection, getDocs, addDoc, query, orderBy, serverTimestamp, doc, getDoc, setDoc, updateDoc, increment, deleteDoc, onSnapshot } from './firebase-config.js';
 
 // Image Preview Logic
 const artImageFile = document.getElementById('artImageFile');
 if (artImageFile) {
-    artImageFile.addEventListener('change', function() {
+    artImageFile.addEventListener('change', function () {
         const file = this.files[0];
         if (file) {
             const reader = new FileReader();
-            reader.onload = function(e) {
+            reader.onload = function (e) {
                 document.getElementById('previewImg').src = e.target.result;
                 document.getElementById('imagePreview').style.display = 'block';
                 document.getElementById('uploadPlaceholder').style.display = 'none';
@@ -24,10 +24,10 @@ window.closeModal = (id) => document.getElementById(id).classList.remove('active
 async function switchSection(section) {
     document.querySelectorAll('.content-section').forEach(s => s.classList.remove('active'));
     document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
-    
+
     const target = document.getElementById(section + 'Section');
     if (target) target.classList.add('active');
-    
+
     // Find the nav item
     const items = document.querySelectorAll('.nav-item');
     items.forEach(item => {
@@ -35,7 +35,7 @@ async function switchSection(section) {
             item.classList.add('active');
         }
     });
-    
+
     loadData(section);
 }
 
@@ -59,14 +59,14 @@ async function loadData(type) {
             querySnapshot.forEach((doc) => {
                 data.push({ id: doc.id, ...doc.data() });
             });
-            
+
             if (type === 'orders') renderOrders(data);
             if (type === 'promos') renderPromos(data);
             if (type === 'articles') renderArticles(data);
         }
-        
+
         if (type === 'settings') loadSettings();
-        
+
         document.getElementById('apiStatus').innerHTML = '<i class="fas fa-circle"></i> Firebase Live';
     } catch (err) {
         console.error("Failed to fetch data", err);
@@ -80,7 +80,7 @@ async function loadSettings() {
     try {
         const docRef = doc(db, "settings", "main");
         const docSnap = await getDoc(docRef);
-        
+
         if (docSnap.exists()) {
             const data = docSnap.data();
             document.getElementById('setAnnounceText').value = data.announcementText || "";
@@ -127,7 +127,7 @@ function renderOrders(orders) {
 
     tbody.innerHTML = orders.map(o => {
         const date = o.createdAt ? new Date(o.createdAt.seconds * 1000).toLocaleDateString() : 'N/A';
-        
+
         // Dynamic Status Class
         let statusClass = 'status-pending';
         if (o.status === 'Shipped') statusClass = 'status-shipped';
@@ -162,7 +162,7 @@ function renderOrders(orders) {
                 </td>
             </tr>
         `}).join('');
-    
+
     const statOrders = document.getElementById('statOrders');
     if (statOrders) statOrders.innerText = orders.length;
 
@@ -177,7 +177,7 @@ async function updateOrderStatus(orderId, newStatus) {
     try {
         const orderRef = doc(db, "orders", orderId);
         const orderSnap = await getDoc(orderRef);
-        
+
         if (orderSnap.exists()) {
             const orderData = orderSnap.data();
             const oldStatus = orderData.status;
@@ -213,7 +213,7 @@ async function updateOrderStatus(orderId, newStatus) {
 window.updateOrderStatus = updateOrderStatus;
 
 async function deleteItem(collectionName, id) {
-    if (!confirm(`Are you sure you want to delete this ${collectionName.slice(0,-1)}?`)) return;
+    if (!confirm(`Are you sure you want to delete this ${collectionName.slice(0, -1)}?`)) return;
     try {
         await deleteDoc(doc(db, collectionName, id));
         loadData(collectionName);
@@ -281,7 +281,7 @@ async function editPromo(id) {
             document.getElementById('promoDiscount').value = data.discount;
             document.getElementById('promoMinAmount').value = data.minAmount || 0;
             document.getElementById('promoLimit').value = data.usageLimit || 9999;
-            
+
             document.getElementById('promoModalTitle').innerText = 'Edit Promo Code';
             openModal('promoModal');
         }
@@ -305,7 +305,7 @@ async function editArticle(id) {
             document.getElementById('artStyleNo').value = data.styleNo || "";
             document.getElementById('artStock').value = data.stock || 0;
             document.getElementById('artImage').value = data.image || "";
-            
+
             // Set preview
             if (data.image) {
                 document.getElementById('previewImg').src = data.image;
@@ -315,7 +315,7 @@ async function editArticle(id) {
                 document.getElementById('imagePreview').style.display = 'none';
                 document.getElementById('uploadPlaceholder').style.display = 'block';
             }
-            
+
             document.getElementById('articleModalTitle').innerText = 'Edit Article';
             openModal('articleModal');
         }
@@ -367,9 +367,9 @@ if (promoForm) {
             editingPromoId = null;
             document.getElementById('promoModalTitle').innerText = 'Create Promo Code';
             loadData('promos');
-        } catch (err) { 
-            alert("Error saving promo: " + err.message); 
-        } finally { 
+        } catch (err) {
+            alert("Error saving promo: " + err.message);
+        } finally {
             btn.innerText = originalText;
             btn.disabled = false;
         }
@@ -420,9 +420,9 @@ if (articleForm) {
             editingArticleId = null;
             document.getElementById('articleModalTitle').innerText = 'Add New Article';
             loadData('articles');
-        } catch (err) { 
-            alert("Error saving article: " + err.message); 
-        } finally { 
+        } catch (err) {
+            alert("Error saving article: " + err.message);
+        } finally {
             btn.innerText = originalText;
             btn.disabled = false;
         }
@@ -432,4 +432,270 @@ if (articleForm) {
 // Initial Load
 document.addEventListener('DOMContentLoaded', () => {
     loadData('orders');
+    initNotifications();
 });
+
+/* ═══════════════════════════════════════════════
+   NOTIFICATION SYSTEM
+   ═══════════════════════════════════════════════ */
+
+// Track seen order IDs to avoid duplicate toasts
+let seenOrderIds = new Set();
+let unreadCount = 0;
+
+// Status icon mapping
+function getStatusIcon(status) {
+    const map = {
+        'Pending':   { icon: 'fa-clock',        cls: 'pending' },
+        'Shipped':   { icon: 'fa-shipping-fast', cls: 'shipped' },
+        'Delivered': { icon: 'fa-check-circle',  cls: 'delivered' },
+        'Cancelled': { icon: 'fa-times-circle',  cls: 'cancelled' },
+    };
+    return map[status] || { icon: 'fa-shopping-bag', cls: 'order' };
+}
+
+// Format relative time
+function timeAgo(seconds) {
+    if (!seconds) return 'Just now';
+    const diff = Math.floor(Date.now() / 1000) - seconds;
+    if (diff < 60)   return 'Just now';
+    if (diff < 3600) return Math.floor(diff / 60) + 'm ago';
+    if (diff < 86400) return Math.floor(diff / 3600) + 'h ago';
+    return Math.floor(diff / 86400) + 'd ago';
+}
+
+// Update badge
+function updateBadge() {
+    const badge = document.getElementById('notifBadge');
+    if (!badge) return;
+    if (unreadCount > 0) {
+        badge.textContent = unreadCount > 99 ? '99+' : unreadCount;
+        badge.classList.add('visible');
+    } else {
+        badge.classList.remove('visible');
+    }
+}
+
+// Show a toast popup
+function showToast(title, subtitle, iconCls = 'order') {
+    const container = document.getElementById('toastContainer');
+    if (!container) return;
+
+    const { icon } = getStatusIcon(null);
+    const toast = document.createElement('div');
+    toast.className = 'toast';
+    toast.innerHTML = `
+        <div class="notif-icon ${iconCls}" style="width:38px;height:38px;border-radius:10px;display:flex;align-items:center;justify-content:center;">
+            <i class="fas fa-shopping-bag"></i>
+        </div>
+        <div class="toast-text">
+            <strong>${title}</strong>
+            <span>${subtitle}</span>
+        </div>
+    `;
+    container.appendChild(toast);
+
+    // Ring the bell
+    const bell = document.getElementById('notifBell');
+    if (bell) {
+        bell.classList.add('ringing');
+        setTimeout(() => bell.classList.remove('ringing'), 1000);
+    }
+
+    setTimeout(() => {
+        toast.classList.add('out');
+        setTimeout(() => toast.remove(), 400);
+    }, 4500);
+}
+
+// Render the notification dropdown list
+function renderNotifList(orders) {
+    const list = document.getElementById('notifList');
+    if (!list) return;
+
+    if (orders.length === 0) {
+        list.innerHTML = `
+            <div class="notif-empty">
+                <i class="fas fa-bell-slash"></i>
+                No notifications yet
+            </div>`;
+        return;
+    }
+
+    list.innerHTML = orders.map(o => {
+        const { icon, cls } = getStatusIcon(o.status);
+        const time = o.createdAt ? timeAgo(o.createdAt.seconds) : 'Just now';
+        const customer = `${o.firstName || ''} ${o.lastName || o.customerName || ''}`.trim() || 'Customer';
+        const itemCount = o.items ? o.items.length : 0;
+        const isUnread = !seenOrderIds.has(o.id) ? '' : '';
+        const unreadCls = o._unread ? 'unread' : '';
+
+        return `
+            <div class="notif-item ${unreadCls}" onclick="handleNotifClick('${o.id}')">
+                <div class="notif-icon ${cls}">
+                    <i class="fas ${icon}"></i>
+                </div>
+                <div class="notif-body">
+                    <strong>New Order from ${customer}</strong>
+                    <span>${itemCount} item${itemCount !== 1 ? 's' : ''} &bull; ₹${(o.total || 0).toLocaleString('en-IN')} &bull; ${o.status || 'Pending'}</span>
+                </div>
+                <div class="notif-time">${time}</div>
+            </div>`;
+    }).join('');
+}
+
+// Click a notification → go to orders section
+window.handleNotifClick = function(orderId) {
+    switchSection('orders');
+    toggleNotifDropdown(false);
+    // Mark that order as read by clearing unread count
+    markAllAsRead();
+};
+
+// Toggle dropdown open/close
+window.toggleNotifDropdown = function(forceState) {
+    const dd = document.getElementById('notifDropdown');
+    if (!dd) return;
+    const isOpen = dd.classList.contains('open');
+    const shouldOpen = forceState !== undefined ? forceState : !isOpen;
+    dd.classList.toggle('open', shouldOpen);
+};
+
+// Mark all as read
+window.markAllAsRead = function() {
+    unreadCount = 0;
+    updateBadge();
+    // Remove unread styling
+    document.querySelectorAll('.notif-item.unread').forEach(el => el.classList.remove('unread'));
+};
+
+// Close dropdown when clicking outside
+document.addEventListener('click', (e) => {
+    const wrapper = document.querySelector('.notif-wrapper');
+    if (wrapper && !wrapper.contains(e.target)) {
+        toggleNotifDropdown(false);
+    }
+});
+
+/* ═══════════════════════════════════════════════
+   CSV DOWNLOAD
+   ═══════════════════════════════════════════════ */
+
+window.downloadOrdersCSV = async function () {
+    const btn = document.getElementById('downloadOrdersBtn');
+    if (btn) { btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Preparing...'; btn.disabled = true; }
+
+    try {
+        const q = query(collection(db, 'orders'), orderBy('createdAt', 'desc'));
+        const snapshot = await getDocs(q);
+
+        const rows = [];
+
+        // Header row
+        rows.push([
+            'Order ID', 'Date', 'Status',
+            'First Name', 'Last Name', 'Phone', 'Email',
+            'Address', 'City', 'State', 'PIN',
+            'Items', 'Total (₹)', 'Promo Code', 'Discount (₹)', 'Shipping (₹)'
+        ]);
+
+        snapshot.forEach(docSnap => {
+            const o = { id: docSnap.id, ...docSnap.data() };
+            const date = o.createdAt ? new Date(o.createdAt.seconds * 1000).toLocaleDateString('en-IN') : '';
+            const itemsSummary = o.items
+                ? o.items.map(i => `${i.name} x${i.quantity}`).join(' | ')
+                : '';
+            const address = o.addressLine || o.address || '';
+
+            rows.push([
+                o.id,
+                date,
+                o.status || 'Pending',
+                o.firstName || '',
+                o.lastName || o.customerName || '',
+                o.phone || '',
+                o.email || '',
+                address,
+                o.city || '',
+                o.state || '',
+                o.pin || '',
+                itemsSummary,
+                o.total || 0,
+                o.promoCode || '',
+                o.discount || 0,
+                o.shipping || 0
+            ]);
+        });
+
+        // Build CSV string with proper quoting
+        const csvContent = rows.map(row =>
+            row.map(cell => {
+                const val = String(cell).replace(/"/g, '""');
+                return val.includes(',') || val.includes('\n') || val.includes('"') ? `"${val}"` : val;
+            }).join(',')
+        ).join('\n');
+
+        // Trigger download
+        const blob = new Blob(['\uFEFF' + csvContent], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        const today = new Date().toISOString().slice(0, 10);
+        a.download = `hridyang-orders-${today}.csv`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+
+    } catch (err) {
+        alert('Error downloading orders: ' + err.message);
+    } finally {
+        if (btn) { btn.innerHTML = '<i class="fas fa-file-download"></i> Download CSV'; btn.disabled = false; }
+    }
+};
+
+// Real-time Firestore listener for orders
+function initNotifications() {
+    const q = query(collection(db, 'orders'), orderBy('createdAt', 'desc'));
+
+    onSnapshot(q, (snapshot) => {
+        // Build ordered list
+        const orders = [];
+        snapshot.forEach(d => orders.push({ id: d.id, ...d.data() }));
+
+        // Check for brand-new orders (added since last snapshot)
+        let newCount = 0;
+        snapshot.docChanges().forEach(change => {
+            if (change.type === 'added') {
+                const o = { id: change.doc.id, ...change.doc.data() };
+                // Only toast if this isn't the very first load batch
+                if (seenOrderIds.size > 0 && !seenOrderIds.has(o.id)) {
+                    const customer = `${o.firstName || ''} ${o.lastName || o.customerName || ''}`.trim() || 'Customer';
+                    showToast(
+                        `New Order Received! 🛍️`,
+                        `${customer} placed an order worth ₹${(o.total || 0).toLocaleString('en-IN')}`
+                    );
+                    newCount++;
+                    o._unread = true;
+                }
+                seenOrderIds.add(o.id);
+            }
+        });
+
+        if (newCount > 0) {
+            unreadCount += newCount;
+            updateBadge();
+        }
+
+        // Mark all existing orders in current list as unread if count > 0 already for first load?
+        // On very first load, just seed seenOrderIds so subsequent additions trigger toasts
+        const taggedOrders = orders.map(o => ({
+            ...o,
+            _unread: false // freshly loaded orders start as read visually
+        }));
+
+        renderNotifList(taggedOrders);
+    }, (err) => {
+        console.error('Notification listener error:', err);
+    });
+}

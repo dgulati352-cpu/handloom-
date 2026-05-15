@@ -58,26 +58,42 @@ async function loadArticles() {
     try {
         let q;
         if (categoryFilter) {
-            q = query(collection(db, "articles"), where("category", "==", categoryFilter), orderBy('createdAt', 'desc'));
+            q = query(collection(db, "articles"), where("category", "==", categoryFilter));
         } else {
             q = query(collection(db, "articles"), orderBy('createdAt', 'desc'));
         }
 
         // Use onSnapshot for REAL-TIME inventory updates
         onSnapshot(q, (querySnapshot) => {
-            const articles = [];
+            let articles = [];
             querySnapshot.forEach(doc => articles.push({ id: doc.id, ...doc.data() }));
+            console.log("Firestore articles loaded:", articles.length, articles);
+
+            if (categoryFilter) {
+                articles.sort((a, b) => {
+                    const tA = a.createdAt ? a.createdAt.seconds : 0;
+                    const tB = b.createdAt ? b.createdAt.seconds : 0;
+                    return tB - tA;
+                });
+            }
 
             // Render helper
             const renderTo = (grid, articlesToRender) => {
-                if (!grid || articlesToRender.length === 0) return;
+                if (!grid) return;
+                console.log("Rendering to grid:", grid.className || grid.id, "Items:", articlesToRender.length);
+                if (articlesToRender.length === 0) {
+                    grid.innerHTML = '<p style="grid-column: 1/-1; text-align: center; color: var(--text-muted); padding: 40px;">No articles found in this category.</p>';
+                    return;
+                }
                 grid.innerHTML = articlesToRender.map(a => {
                     const isOutOfStock = (a.stock !== undefined && a.stock <= 0);
+                    // Use a valid placeholder instead of missing assets/placeholder.png
+                    const imgUrl = a.image || 'https://via.placeholder.com/400x500?text=No+Image';
                     return `
                     <div class="product-card reveal active ${isOutOfStock ? 'out-of-stock' : ''}" data-id="${a.id}">
                         <div class="product-img" style="position: relative;">
                             <a href="product.html?id=${a.id}">
-                                <img src="${a.image || 'assets/placeholder.png'}" alt="${a.name}" style="${isOutOfStock ? 'filter: grayscale(1); opacity: 0.7;' : ''}">
+                                <img src="${imgUrl}" alt="${a.name}" style="${isOutOfStock ? 'filter: grayscale(1); opacity: 0.7;' : ''}; width: 100%; aspect-ratio: 4/5; object-fit: cover;">
                             </a>
                             ${isOutOfStock ? 
                                 `<div class="out-of-stock-badge" style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: rgba(0,0,0,0.7); color: white; padding: 10px 20px; font-weight: 600; letter-spacing: 2px; font-size: 0.8rem; border-radius: 4px; pointer-events: none;">OUT OF STOCK</div>` 
@@ -110,10 +126,10 @@ async function loadArticles() {
                 const pdpContent = document.getElementById('pdp-content');
                 if (product && pdpContent) {
                     const isOutOfStock = (product.stock !== undefined && product.stock <= 0);
-                    pdpContent.innerHTML = `
+                    const imgUrl = product.image || 'https://via.placeholder.com/400x500?text=No+Image';                    pdpContent.innerHTML = `
                         <div class="pdp-layout" style="display: flex; gap: 60px; flex-wrap: wrap;">
                             <div class="pdp-image" style="flex: 1; min-width: 300px;">
-                                <img src="${product.image || 'assets/placeholder.png'}" alt="${product.name}" style="width: 100%; border-radius: 8px; box-shadow: 0 10px 30px rgba(0,0,0,0.05); ${isOutOfStock ? 'filter: grayscale(1); opacity: 0.7;' : ''}">
+                                <img src="${imgUrl}" alt="${product.name}" style="width: 100%; border-radius: 8px; box-shadow: 0 10px 30px rgba(0,0,0,0.05); ${isOutOfStock ? 'filter: grayscale(1); opacity: 0.7;' : ''}">
                             </div>
                             <div class="pdp-details" style="flex: 1; min-width: 300px;">
                                 <h1 style="font-size: 2.5rem; margin-bottom: 10px; font-family: 'Cormorant Garamond', serif;">${product.name}</h1>
@@ -162,7 +178,7 @@ async function loadArticles() {
                             if (existingItemIndex > -1) {
                                 cart[existingItemIndex].quantity += qty;
                             } else {
-                                cart.push({ id: product.id, name: product.name, price: parseInt(product.price), quantity: qty, img: product.image });
+                                cart.push({ id: product.id, name: product.name, price: parseInt(product.price), quantity: qty, img: imgUrl });
                             }
                             updateCartUI();
                             document.getElementById('cartSidebar').classList.add('active');
@@ -193,23 +209,30 @@ async function loadArticles() {
                 renderTo(shopGrid, articles);
             } else {
                 // Homepage logic
-                if (productGrid) renderTo(productGrid, articles.slice(0, 8));
+                const allProductsGrid = document.querySelector('.shop-grid');
+                if (allProductsGrid && allProductsGrid.id === '') {
+                    renderTo(allProductsGrid, articles.slice(0, 8));
+                }
                 
-                // Signature Weaves section - show everything mixed
-                if (shopGrid) renderTo(shopGrid, articles.slice(0, 8));
-                
-                // Specific Highlights by Category
+                // Specific Grids
                 const handloomGrid = document.getElementById('handloom-grid');
-                const godClothesGrid = document.getElementById('god-clothes-grid');
-                const fancyGrid = document.getElementById('fancy-articles-grid');
-
                 if (handloomGrid) renderTo(handloomGrid, articles.filter(a => a.category === 'HANDLOOM').slice(0, 4));
+                
+                const godClothesGrid = document.getElementById('god-clothes-grid');
                 if (godClothesGrid) renderTo(godClothesGrid, articles.filter(a => a.category === 'GOD CLOTHES').slice(0, 4));
-                if (fancyGrid) renderTo(fancyGrid, articles.filter(a => a.category === 'FANCY ARTICLES').slice(0, 4));
+                
+                const fancyArticlesGrid = document.getElementById('fancy-articles-grid');
+                if (fancyArticlesGrid) renderTo(fancyArticlesGrid, articles.filter(a => a.category === 'FANCY ARTICLES').slice(0, 4));
             }
+        }, (error) => {
+            console.error("Firestore onSnapshot Error:", error);
+            const msg = `<p style="grid-column: 1/-1; text-align: center; color: red;">Error loading articles from database: ${error.message}</p>`;
+            if (productGrid) productGrid.innerHTML = msg;
+            if (shopGrid) shopGrid.innerHTML = msg;
+            if (pdpContent) pdpContent.innerHTML = msg;
         });
     } catch (err) {
-        console.error("Error loading articles:", err);
+        console.error("Error in loadArticles function:", err);
     }
 }
 
