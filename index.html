@@ -37,7 +37,7 @@
                 <li><a href="fancy-articles.html">Fancy Articles</a></li>
             </ul>
             <div class="nav-icons">
-                <a href="#" id="installAppBtn" style="display: none; background: #1E3A8A; color: white; padding: 5px 12px; border-radius: 20px; font-size: 0.85rem; font-weight: 500; margin-right: 15px; text-decoration: none;"><i class="fas fa-download" style="margin-right: 5px;"></i> Install App</a>
+                <a href="#" class="installAppBtn" style="display: none; background: #1E3A8A; color: white; padding: 5px 12px; border-radius: 20px; font-size: 0.85rem; font-weight: 500; margin-right: 15px; text-decoration: none;"><i class="fas fa-download" style="margin-right: 5px;"></i> Install App</a>
                 <a href="#" id="searchIcon"><i class="fas fa-search"></i></a>
                 <a href="#" id="cartIcon">
                     <i class="fas fa-shopping-bag"></i>
@@ -59,7 +59,7 @@
                 </div>
             </div>
             <div class="hero-image">
-                <img src="assets/Gemini_Generated_Image_sr197csr197csr19.png" alt="Handloom Heritage">
+                <img src="assets/logo.png" alt="Handloom Heritage">
             </div>
         </div>
     </header>
@@ -192,54 +192,7 @@
 
     <script type="module" src="script-v12.js"></script>
 
-    <script>
-        if ('serviceWorker' in navigator) {
-            window.addEventListener('load', () => {
-                navigator.serviceWorker.register('/service-worker.js')
-                    .then(registration => {
-                        console.log('ServiceWorker registration successful with scope: ', registration.scope);
-                    }, err => {
-                        console.log('ServiceWorker registration failed: ', err);
-                    });
-            });
-        }
 
-        let deferredPrompt;
-        const installAppBtn = document.getElementById('installAppBtn');
-
-        window.addEventListener('beforeinstallprompt', (e) => {
-            // Prevent the mini-infobar from appearing on mobile
-            e.preventDefault();
-            // Stash the event so it can be triggered later.
-            deferredPrompt = e;
-            // Update UI notify the user they can install the PWA
-            if(installAppBtn) installAppBtn.style.display = 'inline-flex';
-        });
-
-        if(installAppBtn) {
-            installAppBtn.addEventListener('click', async (e) => {
-                e.preventDefault();
-                // Hide the app provided install promotion
-                installAppBtn.style.display = 'none';
-                // Show the install prompt
-                if (deferredPrompt) {
-                    deferredPrompt.prompt();
-                    // Wait for the user to respond to the prompt
-                    const { outcome } = await deferredPrompt.userChoice;
-                    console.log(`User response to the install prompt: ${outcome}`);
-                    // We've used the prompt, and can't use it again, throw it away
-                    deferredPrompt = null;
-                }
-            });
-        }
-        
-        window.addEventListener('appinstalled', () => {
-            // Clear the deferredPrompt so it can be garbage collected
-            deferredPrompt = null;
-            // Optionally, send analytics event to indicate successful install
-            console.log('PWA was installed');
-        });
-    </script>
 </body>
 
 </html>
