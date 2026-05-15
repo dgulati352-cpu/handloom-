@@ -88,6 +88,12 @@ async function loadSettings() {
             document.getElementById('setStoreName').value = data.storeName || "Hridyang Collection";
             document.getElementById('setWhatsApp').value = data.whatsAppNumber || "918791416116";
             document.getElementById('setWhatsAppKey').value = data.callMeBotKey || "";
+            if (data.playNotifSound !== undefined) {
+                document.getElementById('setNotifSound').checked = data.playNotifSound;
+            }
+            if (data.notifDuration !== undefined) {
+                document.getElementById('setNotifDuration').value = data.notifDuration;
+            }
         }
     } catch (err) {
         console.error("Error loading settings:", err);
@@ -107,6 +113,8 @@ if (saveSettingsBtn) {
                 storeName: document.getElementById('setStoreName').value,
                 whatsAppNumber: document.getElementById('setWhatsApp').value,
                 callMeBotKey: document.getElementById('setWhatsAppKey').value,
+                playNotifSound: document.getElementById('setNotifSound').checked,
+                notifDuration: parseFloat(document.getElementById('setNotifDuration').value) || 4.5,
                 updatedAt: serverTimestamp()
             };
 
@@ -476,10 +484,37 @@ function updateBadge() {
     }
 }
 
+// Play a simple notification beep
+function playBeep() {
+    try {
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        const oscillator = audioCtx.createOscillator();
+        const gainNode = audioCtx.createGain();
+        oscillator.type = 'sine';
+        oscillator.frequency.setValueAtTime(880, audioCtx.currentTime); // A5
+        oscillator.frequency.exponentialRampToValueAtTime(1760, audioCtx.currentTime + 0.1);
+        gainNode.gain.setValueAtTime(0.1, audioCtx.currentTime);
+        gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.1);
+        oscillator.connect(gainNode);
+        gainNode.connect(audioCtx.destination);
+        oscillator.start();
+        oscillator.stop(audioCtx.currentTime + 0.15);
+    } catch (e) {
+        console.warn("Audio playback failed or disabled", e);
+    }
+}
+
 // Show a toast popup
 function showToast(title, subtitle, iconCls = 'order') {
     const container = document.getElementById('toastContainer');
     if (!container) return;
+
+    // Read settings directly from the DOM for simplicity
+    const soundEl = document.getElementById('setNotifSound');
+    const playSound = soundEl ? soundEl.checked : true;
+    
+    const durationEl = document.getElementById('setNotifDuration');
+    const durationSecs = durationEl ? (parseFloat(durationEl.value) || 4.5) : 4.5;
 
     const { icon } = getStatusIcon(null);
     const toast = document.createElement('div');
@@ -501,11 +536,15 @@ function showToast(title, subtitle, iconCls = 'order') {
         bell.classList.add('ringing');
         setTimeout(() => bell.classList.remove('ringing'), 1000);
     }
+    
+    if (playSound) {
+        playBeep();
+    }
 
     setTimeout(() => {
         toast.classList.add('out');
         setTimeout(() => toast.remove(), 400);
-    }, 4500);
+    }, durationSecs * 1000);
 }
 
 // Render the notification dropdown list

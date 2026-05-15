@@ -1,10 +1,11 @@
-const CACHE_NAME = 'hridyang-cache-v1';
+const CACHE_NAME = 'hridyang-cache-v2';
 const urlsToCache = [
   '/',
   '/index.html',
   '/style.css',
   '/script-v12.js',
-  '/manifest.json'
+  '/manifest.json',
+  '/assets/icon.svg'
 ];
 
 self.addEventListener('install', event => {
