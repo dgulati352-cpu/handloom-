@@ -1,4 +1,4 @@
-const CACHE_NAME = 'hridyang-cache-v11';
+const CACHE_NAME = 'hridyang-cache-v12';
 
 
 
