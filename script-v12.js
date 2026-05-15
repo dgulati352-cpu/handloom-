@@ -606,37 +606,44 @@ function showUpdateBanner(reg) {
     banner.id = bannerId;
     banner.style.cssText = `
         position: fixed;
-        bottom: 25px;
+        bottom: 30px;
         left: 50%;
         transform: translateX(-50%);
         background: var(--accent);
         color: #1A1A1A;
-        padding: 12px 25px;
+        padding: 15px 30px;
         border-radius: 50px;
-        box-shadow: 0 10px 30px rgba(0,0,0,0.3);
-        z-index: 10000;
+        box-shadow: 0 15px 40px rgba(0,0,0,0.4);
+        z-index: 999999;
         display: flex;
         align-items: center;
+        justify-content: center;
         gap: 20px;
         font-weight: 700;
         border: 2px solid white;
-        transition: 0.3s;
+        animation: slideUpFade 0.6s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+        pointer-events: auto;
     `;
+    
+    // Attach reg to window temporarily for the button click
+    window.pendingUpdateReg = reg;
+
     banner.innerHTML = `
-        <span style="font-size: 0.9rem;"><i class="fas fa-sync-alt fa-spin"></i> New Update Available!</span>
-        <button id="updateNowBtn" style="background: white; border: none; padding: 6px 18px; border-radius: 25px; font-weight: 800; cursor: pointer; font-size: 0.8rem; text-transform: uppercase;">Update Now</button>
+        <span style="font-size: 1rem; white-space: nowrap;"><i class="fas fa-sync-alt fa-spin"></i> Update Available</span>
+        <button onclick="handlePWAUpdate()" style="background: white; color: #1A1A1A; border: none; padding: 10px 22px; border-radius: 25px; font-weight: 800; cursor: pointer; font-size: 0.85rem; text-transform: uppercase; box-shadow: 0 4px 10px rgba(0,0,0,0.1); pointer-events: auto;">Update Now</button>
     `;
     document.body.appendChild(banner);
-
-    document.getElementById('updateNowBtn').addEventListener('click', () => {
-        if (reg.waiting) {
-            reg.waiting.postMessage({ type: 'SKIP_WAITING' });
-        } else {
-            // Fallback: if reg.waiting is gone, just reload
-            window.location.reload();
-        }
-    });
 }
+
+window.handlePWAUpdate = () => {
+    console.log("Update button clicked...");
+    const reg = window.pendingUpdateReg;
+    if (reg && reg.waiting) {
+        reg.waiting.postMessage({ type: 'SKIP_WAITING' });
+    } else {
+        window.location.reload();
+    }
+};
 
 if (!window.isSecureContext) {
     console.warn("PWA features require a Secure Context (HTTPS or localhost).");
