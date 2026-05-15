@@ -238,8 +238,51 @@ document.addEventListener('click', (e) => {
     } else if (e.target.closest('#closeCart') || e.target.id === 'cartOverlay') {
         document.getElementById('cartSidebar').classList.remove('active');
         document.getElementById('cartOverlay').classList.remove('active');
+    } else if (e.target.id === 'checkoutBtn') {
+        window.location.href = 'checkout.html';
     }
 });
+
+// Bespoke Request Form
+const orderForm = document.getElementById('orderForm');
+if (orderForm) {
+    orderForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const feedback = document.getElementById('formFeedback');
+        const submitBtn = orderForm.querySelector('button');
+        
+        try {
+            submitBtn.innerText = 'Submitting...';
+            submitBtn.disabled = true;
+
+            const requestData = {
+                customerName: document.getElementById('name').value,
+                customerEmail: document.getElementById('email').value,
+                category: document.getElementById('collection').value,
+                details: document.getElementById('details').value,
+                status: 'New',
+                type: 'Bespoke Request',
+                createdAt: serverTimestamp()
+            };
+
+            await addDoc(collection(db, 'bespoke_requests'), requestData);
+
+            feedback.style.display = 'block';
+            feedback.style.color = '#059669';
+            feedback.innerHTML = '<i class="fas fa-check-circle"></i> Thank you! Your bespoke request has been sent. We will contact you soon.';
+            orderForm.reset();
+        } catch (err) {
+            console.error(err);
+            feedback.style.display = 'block';
+            feedback.style.color = '#dc2626';
+            feedback.innerHTML = '<i class="fas fa-exclamation-circle"></i> Failed to send request. Please try again.';
+        } finally {
+            submitBtn.innerText = 'Submit Request';
+            submitBtn.disabled = false;
+        }
+    });
+}
+
 
 document.addEventListener('input', (e) => {
     if (e.target.classList.contains('qty-input')) syncCartWithInput(e.target, false);
