@@ -195,7 +195,19 @@ function renderPDP(articles) {
 }
 
 // Global Logic
-let cart = JSON.parse(localStorage.getItem('vanyaCart')) || [];
+let cart = [];
+try {
+    const rawCart = JSON.parse(localStorage.getItem('vanyaCart')) || [];
+    if (Array.isArray(rawCart)) {
+        cart = rawCart.filter(item => item && item.id).map(item => ({
+            ...item,
+            price: parseInt(item.price) || 0,
+            quantity: parseInt(item.quantity) || 1
+        }));
+    }
+} catch (e) {
+    cart = [];
+}
 
 function syncCartWithInput(input, shouldOpenCart = false) {
     const card = input.closest('.product-card');
@@ -209,9 +221,9 @@ function syncCartWithInput(input, shouldOpenCart = false) {
     } else {
         if (index > -1) cart[index].quantity = qty;
         else {
-            const name = card.querySelector('h3').innerText;
-            const priceStr = card.querySelector('.price').innerText;
-            const price = parseInt(priceStr.replace(/[^0-9]/g, ''));
+            const name = card.querySelector('h3').textContent.trim();
+            const priceStr = card.querySelector('.price').textContent;
+            const price = parseInt(priceStr.replace(/[^0-9]/g, '')) || 0;
             const img = card.querySelector('.product-img img').src;
             cart.push({ id, name, price, quantity: qty, img });
         }
