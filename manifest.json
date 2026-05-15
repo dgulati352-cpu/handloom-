@@ -1,0 +1,37 @@
+{
+  "name": "Hridyang Collection",
+  "short_name": "Hridyang",
+  "description": "Premium handloom sarees and fabrics by Hridyang Collection",
+  "start_url": "/index.html",
+  "display": "standalone",
+  "background_color": "#F8F5F2",
+  "theme_color": "#1E3A8A",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "assets/handloom.jpg",
+      "sizes": "192x192",
+      "type": "image/jpeg",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "assets/handloom.jpg",
+      "sizes": "512x512",
+      "type": "image/jpeg",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["shopping", "lifestyle"],
+  "shortcuts": [
+    {
+      "name": "Handloom",
+      "url": "/handloom.html",
+      "description": "Browse Handloom collection"
+    },
+    {
+      "name": "God Clothes",
+      "url": "/god-clothes.html",
+      "description": "Browse God Clothes collection"
+    }
+  ]
+}
