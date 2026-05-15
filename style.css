@@ -3,6 +3,7 @@
 :root {
     --primary: #A34E4E;       /* Muted Terracotta */
     --secondary: #8B4513;     /* Saddle Brown */
+    --accent: #FB8500;        /* Vibrant Saffron/Marigold */
     --bg-light: #FDFCFB;      /* Warm Cream/Beige */
     --bg-white: #FFFFFF;
     --bg-surface: #F8F5F2;    /* Slightly darker/warmer surface */
@@ -19,6 +20,7 @@
     :root {
         --primary: #C96666;
         --secondary: #B86733;
+        --accent: #FFB703;        /* Slightly lighter Saffron for dark mode */
         --bg-light: #121212;
         --bg-white: #1E1E1E;
         --bg-surface: #252525;
@@ -54,8 +56,8 @@ h1, h2, h3, .logo {
 
 /* --- Announcement Bar --- */
 .announcement-bar {
-    background: var(--primary);
-    color: white;
+    background: var(--accent);
+    color: #1A1A1A;
     padding: 10px 0;
     font-size: 0.75rem;
     letter-spacing: 2px;
@@ -170,8 +172,8 @@ nav {
     position: absolute;
     top: -8px;
     right: -10px;
-    background: var(--primary);
-    color: white;
+    background: var(--accent);
+    color: #1A1A1A;
     font-size: 0.65rem;
     width: 18px;
     height: 18px;
@@ -179,7 +181,7 @@ nav {
     display: flex;
     align-items: center;
     justify-content: center;
-    font-weight: 600;
+    font-weight: 700;
 }
 
 /* --- Hero Section --- */
@@ -255,7 +257,8 @@ nav {
 }
 
 .btn.primary:hover {
-    background: var(--primary);
+    background: var(--accent);
+    color: #1A1A1A;
 }
 
 .btn.secondary {
@@ -425,6 +428,12 @@ nav {
     text-transform: uppercase;
     letter-spacing: 2px;
     cursor: pointer;
+    transition: var(--transition);
+}
+
+.quick-add button:hover {
+    background: var(--accent);
+    color: #1A1A1A;
 }
 
 .product-info {
